@@ -1,0 +1,209 @@
+{
+  "timestamp": "2026-03-17T15:28:16.603643+00:00",
+  "station_count": 12,
+  "stations": {
+    "167f944442816040bd41d48b90c97b0d53e538858ad0c6ba39b7b172c11b7875": {
+      "name": "The Final Checkout Ltd",
+      "brand": "The Final Checkout Ltd",
+      "postcode": "ZE2 9TW",
+      "prices": [
+        {
+          "fuel_type": "E5",
+          "price": 147.9,
+          "price_last_updated": "2026-03-16T15:52:21.000Z",
+          "price_change_effective_timestamp": "2026-03-16T15:52:21.000Z"
+        },
+        {
+          "fuel_type": "B7_STANDARD",
+          "price": 173.7,
+          "price_last_updated": "2026-03-16T15:52:21.000Z",
+          "price_change_effective_timestamp": "2026-03-16T15:52:21.000Z"
+        }
+      ]
+    },
+    "a394d57aa770be6b5576937257aa7c4c30bd8cc1a7a413dd3469175895c8dfd2": {
+      "name": "Skerries Co-operative Society",
+      "brand": "Skerries Co-operative Society",
+      "postcode": "ZE2 9AR",
+      "prices": [
+        {
+          "fuel_type": "E10",
+          "price": 210,
+          "price_last_updated": "2026-02-08T14:42:15.791Z",
+          "price_change_effective_timestamp": "2026-02-08T14:42:15.000Z"
+        },
+        {
+          "fuel_type": "B7_STANDARD",
+          "price": 220,
+          "price_last_updated": "2026-02-08T14:42:15.791Z",
+          "price_change_effective_timestamp": "2026-02-08T14:42:15.000Z"
+        }
+      ]
+    },
+    "c467122becaa98869006630a1d9360e512764d9633ce2be63725ba538e837db9": {
+      "name": "Walls Shop",
+      "brand": "Walls Shop",
+      "postcode": "ZE2 9PF",
+      "prices": [
+        {
+          "fuel_type": "B7_STANDARD",
+          "price": 170.9,
+          "price_last_updated": "2026-03-10T12:07:53.308Z",
+          "price_change_effective_timestamp": "2026-03-10T12:07:53.000Z"
+        }
+      ]
+    },
+    "ba80bba406d3b98dddc48a223f3b7fd602cd30490706e0557bf343be102f6e85": {
+      "name": "Bolts Car Hire Ltd Sumburgh",
+      "brand": "Bolts Car Hire Ltd Sumburgh",
+      "postcode": "ZE3 9JP",
+      "prices": [
+        {
+          "fuel_type": "E10",
+          "price": 150.8,
+          "price_last_updated": "2026-03-16T12:17:17.000Z",
+          "price_change_effective_timestamp": "2026-03-16T12:17:17.000Z"
+        },
+        {
+          "fuel_type": "B7_STANDARD",
+          "price": 174.8,
+          "price_last_updated": "2026-03-16T12:17:17.000Z",
+          "price_change_effective_timestamp": "2026-03-16T12:17:17.000Z"
+        }
+      ]
+    },
+    "38646a7634e1d382ca84066ed0856e74eebf92751170677ad1b2b7dd73e4821b": {
+      "name": "Brae Garage Shetland Ltd",
+      "brand": "Brae Garage Shetland Ltd",
+      "postcode": "ZE2 9QJ",
+      "prices": [
+        {
+          "fuel_type": "E10",
+          "price": 151.9,
+          "price_last_updated": "2026-03-17T13:26:19.000Z",
+          "price_change_effective_timestamp": "2026-03-17T13:26:19.000Z"
+        },
+        {
+          "fuel_type": "B7_STANDARD",
+          "price": 175.9,
+          "price_last_updated": "2026-03-17T13:26:19.000Z",
+          "price_change_effective_timestamp": "2026-03-17T13:26:19.000Z"
+        }
+      ]
+    },
+    "7b70ad6a691ea3216bc75ff6d1436b578ff23ce905d3177c4b3da6c661edc390": {
+      "name": "Skiboul Stores",
+      "brand": "Skiboul Stores",
+      "postcode": "ZE2 9DP",
+      "prices": [
+        {
+          "fuel_type": "E5",
+          "price": 147.8,
+          "price_last_updated": "2026-03-17T15:22:33.000Z",
+          "price_change_effective_timestamp": "2026-03-17T15:22:33.000Z"
+        },
+        {
+          "fuel_type": "B7_STANDARD",
+          "price": 173.5,
+          "price_last_updated": "2026-03-17T15:22:51.000Z",
+          "price_change_effective_timestamp": "2026-03-17T15:22:51.000Z"
+        }
+      ]
+    },
+    "479877af779330916ebd0d0ba39792674057458e94cdf87d8bcfcdc2c34ff645": {
+      "name": "Sutherlands Filling Station",
+      "brand": "Jim's Garage Ford and Mazda",
+      "postcode": "ZE1 0PZ",
+      "prices": [
+        {
+          "fuel_type": "E5",
+          "price": 151.9,
+          "price_last_updated": "2026-03-16T16:26:36.000Z",
+          "price_change_effective_timestamp": "2026-03-16T16:26:36.000Z"
+        },
+        {
+          "fuel_type": "B7_STANDARD",
+          "price": 175.9,
+          "price_last_updated": "2026-03-16T16:26:36.000Z",
+          "price_change_effective_timestamp": "2026-03-16T16:26:36.000Z"
+        }
+      ]
+    },
+    "abc693a5511e8cd3398e417ae27fde0fa9a43f7dcb0248c101f5bc30070674e4": {
+      "name": "Sound Service Station",
+      "brand": "Sound Service Station",
+      "postcode": "ZE1 0RD",
+      "prices": [
+        {
+          "fuel_type": "E10",
+          "price": 151.8,
+          "price_last_updated": "2026-03-16T12:05:56.000Z",
+          "price_change_effective_timestamp": "2026-03-16T12:05:56.000Z"
+        },
+        {
+          "fuel_type": "B7_STANDARD",
+          "price": 176.8,
+          "price_last_updated": "2026-03-16T12:07:08.000Z",
+          "price_change_effective_timestamp": "2026-03-16T12:07:08.000Z"
+        }
+      ]
+    },
+    "965d326f5b8009a2e607fd738f08a622ad5553c22de41704469faad3068b1aae": {
+      "name": "Burra Motor Repairs Limited",
+      "brand": "Burra Motor Repairs Limited",
+      "postcode": "ZE2 9LB",
+      "prices": [
+        {
+          "fuel_type": "E5",
+          "price": 135,
+          "price_last_updated": "2026-02-05T13:05:53.880Z",
+          "price_change_effective_timestamp": "2026-02-05T13:05:53.000Z"
+        },
+        {
+          "fuel_type": "B7_STANDARD",
+          "price": 146,
+          "price_last_updated": "2026-02-05T13:05:53.880Z",
+          "price_change_effective_timestamp": "2026-02-05T13:05:53.000Z"
+        }
+      ]
+    },
+    "3ccb4d29629674293e8f1ac90c24b119a27562cfe80704259abebc4f9823abc7": {
+      "name": "Bolts Car Hire Ltd Lerwick",
+      "brand": "Bolts Car Hire Ltd Lwk",
+      "postcode": "ZE1 0NT",
+      "prices": [
+        {
+          "fuel_type": "E10",
+          "price": 150.8,
+          "price_last_updated": "2026-03-16T12:17:41.000Z",
+          "price_change_effective_timestamp": "2026-03-16T12:17:41.000Z"
+        },
+        {
+          "fuel_type": "B7_STANDARD",
+          "price": 174.8,
+          "price_last_updated": "2026-03-16T12:17:41.000Z",
+          "price_change_effective_timestamp": "2026-03-16T12:17:41.000Z"
+        }
+      ]
+    },
+    "945c4f6ec8bdd6a2dd1dd9c982823a49c5f2d917a2e3966af8f34b62b9edec2a": {
+      "name": "Highland Fuels",
+      "brand": "Highland Fuels",
+      "postcode": "ZE1 0LL",
+      "prices": [
+        {
+          "fuel_type": "B7_STANDARD",
+          "price": 166.9,
+          "price_last_updated": "2026-03-09T16:35:36.652Z",
+          "price_change_effective_timestamp": "2026-03-09T16:34:26.000Z"
+        }
+      ]
+    },
+    "fc63a6d3e5892dd34fe2d14e31d360ba963d84334ee2232cce3b0f01fe9ae9e7": {
+      "name": "LEASK FILLING STATION",
+      "brand": "GULF",
+      "postcode": "ZE2 9HB",
+      "prices": []
+    }
+  }
+}
