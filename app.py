@@ -816,7 +816,7 @@ def get_region_data(conn, region, uk_latest):
 
 
 @app.route("/")
-def dashboard():
+def dashboard(station_suffix=""):
     init_db()
     conn = get_conn()
 
@@ -876,7 +876,7 @@ def dashboard():
         comparison_fuels=comparison_fuels,
         uk_latest=uk_latest,
         uk_overlay=uk_overlay,
-        station_suffix="",
+        station_suffix=station_suffix,
     )
 
 
