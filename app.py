@@ -146,7 +146,12 @@ DASHBOARD_HTML = """
             <div class="card">
                 <h3>{{ fuel_labels.get(fuel, fuel) }} — Since Iran Conflict</h3>
                 <div class="value"><span class="premium">{{ "%+.1f"|format(chg.diff) }}p ({{ "%+.1f"|format(chg.pct) }}%)</span></div>
-                <div class="sub">{{ "%.1f"|format(chg.before) }}p → {{ "%.1f"|format(chg.after) }}p since 28 Feb</div>
+                <div class="sub">
+                    {{ "%.1f"|format(chg.before) }}p → {{ "%.1f"|format(chg.after) }}p since 28 Feb
+                    {% if chg.uk_diff is defined %}
+                    <br>UK avg: {{ "%+.1f"|format(chg.uk_diff) }}p ({{ "%+.1f"|format(chg.uk_pct) }}%)
+                    {% endif %}
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -346,17 +351,37 @@ def dashboard():
     """).fetchall()
     pre_map = {r["fuel_type"]: r["avg_price"] for r in pre_conflict}
     post_map = {r["fuel_type"]: r["avg_price"] for r in post_conflict}
+    # UK averages around conflict date
+    uk_fuel_map = {"E10": "ULSP", "E5": "ULSP", "B7_STANDARD": "ULSD"}
+    uk_pre_conflict = conn.execute("""
+        SELECT fuel_type, price_pence FROM uk_weekly_prices
+        WHERE date = (SELECT MAX(date) FROM uk_weekly_prices WHERE date <= ?)
+    """, (conflict_date,)).fetchall()
+    uk_post_conflict = conn.execute("""
+        SELECT fuel_type, price_pence FROM uk_weekly_prices
+        WHERE date = (SELECT MAX(date) FROM uk_weekly_prices)
+    """).fetchall()
+    uk_pre_map = {r["fuel_type"]: r["price_pence"] for r in uk_pre_conflict}
+    uk_post_map = {r["fuel_type"]: r["price_pence"] for r in uk_post_conflict}
+
     conflict_change = {}
     for ft in pre_map:
         if ft in post_map:
             before = pre_map[ft]
             after = post_map[ft]
-            conflict_change[ft] = {
+            entry = {
                 "before": before,
                 "after": after,
                 "diff": after - before,
                 "pct": ((after - before) / before) * 100,
             }
+            uk_ft = uk_fuel_map.get(ft)
+            if uk_ft and uk_ft in uk_pre_map and uk_ft in uk_post_map:
+                uk_before = uk_pre_map[uk_ft]
+                uk_after = uk_post_map[uk_ft]
+                entry["uk_diff"] = uk_after - uk_before
+                entry["uk_pct"] = ((uk_after - uk_before) / uk_before) * 100
+            conflict_change[ft] = entry
 
     # Station list with available fuels
     station_fuel_rows = conn.execute("""
