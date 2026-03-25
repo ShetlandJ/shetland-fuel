@@ -141,11 +141,13 @@ DASHBOARD_HTML = """
                 </div>
             </div>
             {% endfor %}
+            {% for fuel, chg in conflict_change.items() %}
             <div class="card">
-                <h3>Price Records</h3>
-                <div class="value">{{ total_records }}</div>
-                <div class="sub">Since tracking began</div>
+                <h3>{{ fuel }} — Since Iran Conflict</h3>
+                <div class="value"><span class="premium">{{ "%+.1f"|format(chg.diff) }}p ({{ "%+.1f"|format(chg.pct) }}%)</span></div>
+                <div class="sub">{{ "%.1f"|format(chg.before) }}p → {{ "%.1f"|format(chg.after) }}p since 28 Feb</div>
             </div>
+            {% endfor %}
         </div>
 
         <div class="chart-container">
@@ -324,6 +326,36 @@ def dashboard():
 
     total_records = conn.execute("SELECT COUNT(*) FROM prices").fetchone()[0]
 
+    # Price change since Iran conflict (28 Feb 2026)
+    conflict_date = "2026-02-28"
+    pre_conflict = conn.execute("""
+        SELECT fuel_type, AVG(price_pence) as avg_price
+        FROM prices
+        WHERE DATE(recorded_at) = (
+            SELECT MAX(DATE(recorded_at)) FROM prices WHERE DATE(recorded_at) <= ?
+        )
+        GROUP BY fuel_type
+    """, (conflict_date,)).fetchall()
+    post_conflict = conn.execute("""
+        SELECT fuel_type, AVG(price_pence) as avg_price
+        FROM prices
+        WHERE DATE(recorded_at) = (SELECT MAX(DATE(recorded_at)) FROM prices)
+        GROUP BY fuel_type
+    """).fetchall()
+    pre_map = {r["fuel_type"]: r["avg_price"] for r in pre_conflict}
+    post_map = {r["fuel_type"]: r["avg_price"] for r in post_conflict}
+    conflict_change = {}
+    for ft in pre_map:
+        if ft in post_map:
+            before = pre_map[ft]
+            after = post_map[ft]
+            conflict_change[ft] = {
+                "before": before,
+                "after": after,
+                "diff": after - before,
+                "pct": ((after - before) / before) * 100,
+            }
+
     # Station list with available fuels
     station_fuel_rows = conn.execute("""
         SELECT s.name, s.brand, s.postcode, p.fuel_type
@@ -389,6 +421,7 @@ def dashboard():
         latest_prices=latest_prices,
         summary=summary,
         total_records=total_records,
+        conflict_change=conflict_change,
         shetland_chart_data=shetland_chart_data,
         uk_chart_data=uk_chart_data,
         uk_latest=uk_latest,

@@ -8,6 +8,7 @@ A Python app that tracks fuel prices across all 12 Shetland filling stations usi
 - **API client** (`api_client.py`) — OAuth2 client-credentials flow against `https://www.fuel-finder.service.gov.uk`
 - **SQLite database** (`prices.db`) — tables: `stations`, `prices`, `uk_weekly_prices`
 - **No frontend build step** — HTML is a template string inside `app.py`, Plotly loaded from CDN
+- **Static site** (`docs/index.html`) — built by `build_static.py`, deployed to GitHub Pages
 
 ## Key files
 | File | Purpose |
@@ -18,6 +19,8 @@ A Python app that tracks fuel prices across all 12 Shetland filling stations usi
 | `archive_snapshot.py` | Saves full JSON snapshot to `archive/` directory |
 | `import_history.py` | One-time import from `matthewgall/fuelfinder-archive` git history |
 | `import_uk_weekly.py` | Imports GOV.UK weekly national fuel price averages (2003–2026) |
+| `update_all.py` | Full pipeline: pull archive → fetch live → import UK weekly → build static |
+| `build_static.py` | Renders Flask dashboard to `docs/index.html` for GitHub Pages |
 | `config.py` | Loads `.env`, sets API credentials and DB path |
 | `db.py` | SQLite schema and connection helper |
 
@@ -42,7 +45,14 @@ All 12 Shetland stations have postcodes starting with `ZE`. None are major chain
 pip install -r requirements.txt
 python3 fetch_prices.py   # fetch current prices
 python3 app.py            # start dashboard on :5001
+python3 update_all.py     # full pipeline (archive + live + UK weekly + static build)
 ```
+
+## Deployment
+- **GitHub Pages** at `https://shetlandj.github.io/shetland-fuel/` served from `docs/index.html`
+- **GitHub Actions** (`.github/workflows/update.yml`) runs `update_all.py` daily at 23:55 UTC, commits updated static site
+- **Repo secrets** required: `FUEL_FINDER_CLIENT_ID`, `FUEL_FINDER_CLIENT_SECRET`
+- Manual trigger available via Actions tab → "Run workflow"
 
 ## Fuel type codes
 | Code | Meaning |
