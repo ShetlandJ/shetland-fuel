@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+from urllib.parse import quote
 
 from flask import Flask, render_template_string
 
@@ -129,6 +130,13 @@ DASHBOARD_HTML = """
             padding: 4rem 2rem;
             color: #64748b;
         }
+        .station-link {
+            color: #60a5fa;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .station-link:hover { text-decoration: underline; color: #93bbfc; }
+
         .empty-state h2 { color: #94a3b8; margin-bottom: 1rem; }
         .empty-state code {
             background: #1e293b;
@@ -222,7 +230,7 @@ DASHBOARD_HTML = """
                 <tbody>
                 {% for row in data.latest_prices %}
                     <tr>
-                        <td>{{ row.name }}</td>
+                        <td><a href="station/{{ row.node_id }}{{ station_suffix }}" class="station-link">{{ row.name }}</a></td>
                         <td>{{ row.brand }}</td>
                         <td>{{ row.postcode }}</td>
                         <td><span class="fuel-tag fuel-{{ row.fuel_type if row.fuel_type in ['E10','B7_STANDARD','E5','SDV'] else 'default' }}">{{ fuel_labels.get(row.fuel_type, row.fuel_type) }}</span></td>
@@ -255,7 +263,7 @@ DASHBOARD_HTML = """
                 <tbody>
                 {% for s in data.station_fuels %}
                     <tr>
-                        <td>{{ s.name }}</td>
+                        <td><a href="station/{{ s.node_id }}{{ station_suffix }}" class="station-link">{{ s.name }}</a></td>
                         <td>{{ s.brand }}</td>
                         <td>{{ s.postcode }}</td>
                         <td>
@@ -479,6 +487,203 @@ DASHBOARD_HTML = """
 </html>
 """
 
+STATION_HTML = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ station.name }} — Northern Isles Fuel Prices</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    {% set fuel_labels = {'E10': 'Petrol (E10)', 'E5': 'Premium Petrol (E5)', 'B7_STANDARD': 'Diesel (B7)', 'SDV': 'SDV'} %}
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        header {
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+            padding: 1.5rem 2rem;
+        }
+        header h1 { font-size: 1.5rem; font-weight: 600; color: #f8fafc; }
+        header p { color: #94a3b8; margin-top: 0.25rem; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+        .back-link {
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+        }
+        .back-link:hover { text-decoration: underline; }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+        }
+        .card h3 { font-size: 0.875rem; color: #94a3b8; font-weight: 500; }
+        .card .value { font-size: 1.75rem; font-weight: 700; color: #f8fafc; margin-top: 0.25rem; }
+        .card .sub { font-size: 0.8rem; color: #64748b; margin-top: 0.25rem; }
+
+        .chart-container {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .chart-container h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+        th, td { padding: 0.75rem 1rem; text-align: left; }
+        th {
+            background: #0f172a;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        td { border-top: 1px solid #1e293b; font-size: 0.9rem; }
+        tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+        .fuel-tag {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .fuel-E10 { background: #065f46; color: #6ee7b7; }
+        .fuel-B7_STANDARD { background: #1e3a5f; color: #7dd3fc; }
+        .fuel-E5 { background: #713f12; color: #fde68a; }
+        .fuel-SDV { background: #581c87; color: #d8b4fe; }
+        .fuel-default { background: #334155; color: #e2e8f0; }
+
+        .change-up { color: #f87171; }
+        .change-down { color: #6ee7b7; }
+        .change-none { color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{{ station.name }}</h1>
+        <p>{{ station.brand }} — {{ station.address }}, {{ station.postcode }}</p>
+    </header>
+    <div class="container">
+        <a href="{{ base_path }}" class="back-link">&#8592; Back to dashboard</a>
+
+        <div class="cards">
+            {% for fuel in latest_prices %}
+            <div class="card">
+                <h3>{{ fuel_labels.get(fuel.fuel_type, fuel.fuel_type) }}</h3>
+                <div class="value">{{ "%.1f"|format(fuel.price_pence) }}p</div>
+                <div class="sub">Last updated {{ fuel.recorded_at[:10] }}</div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="chart-container">
+            <h2>Price History</h2>
+            <div id="station-chart"></div>
+        </div>
+
+        <div class="chart-container" style="overflow-x: auto;">
+            <h2>All Recorded Prices</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Fuel</th>
+                        <th>Price (p/litre)</th>
+                        <th>Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in price_history %}
+                    <tr>
+                        <td>{{ row.date }}</td>
+                        <td><span class="fuel-tag fuel-{{ row.fuel_type if row.fuel_type in ['E10','B7_STANDARD','E5','SDV'] else 'default' }}">{{ fuel_labels.get(row.fuel_type, row.fuel_type) }}</span></td>
+                        <td><strong>{{ "%.1f"|format(row.price_pence) }}</strong></td>
+                        <td>
+                            {% if row.change is not none %}
+                                <span class="{{ 'change-up' if row.change > 0 else ('change-down' if row.change < 0 else 'change-none') }}">
+                                    {{ "%+.1f"|format(row.change) }}p
+                                </span>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const fuelLabels = { 'E10': 'Petrol (E10)', 'E5': 'Premium Petrol (E5)', 'B7_STANDARD': 'Diesel (B7)', 'SDV': 'SDV' };
+        const fuelColors = { 'E10': '#6ee7b7', 'B7_STANDARD': '#7dd3fc', 'E5': '#fde68a', 'SDV': '#d8b4fe' };
+
+        const chartData = {{ chart_data|tojson }};
+        const traces = [];
+        for (const [key, series] of Object.entries(chartData)) {
+            traces.push({
+                x: series.x, y: series.y,
+                name: fuelLabels[key] || key,
+                mode: 'lines+markers',
+                line: { width: 2, color: fuelColors[key] || '#94a3b8' },
+                marker: { size: 5 },
+            });
+        }
+
+        Plotly.newPlot('station-chart', traces, {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#94a3b8' },
+            xaxis: { gridcolor: '#334155' },
+            yaxis: { gridcolor: '#334155', title: 'Pence per litre' },
+            legend: { orientation: 'h', y: -0.15 },
+            margin: { t: 30, r: 20 },
+            hovermode: 'x unified',
+            shapes: [{
+                type: 'line',
+                x0: '2026-02-28', x1: '2026-02-28',
+                y0: 0, y1: 1, yref: 'paper',
+                line: { color: '#f87171', width: 2, dash: 'dot' },
+            }],
+            annotations: [{
+                x: '2026-02-28', y: 1.05, yref: 'paper',
+                text: 'Iran war begins (28 Feb)',
+                showarrow: false,
+                font: { color: '#f87171', size: 11 },
+            }],
+        }, { responsive: true });
+    </script>
+</body>
+</html>
+"""
+
 
 def get_region_data(conn, region, uk_latest):
     """Query all dashboard data for a single region."""
@@ -487,7 +692,7 @@ def get_region_data(conn, region, uk_latest):
     ).fetchall()
 
     latest_prices = conn.execute("""
-        SELECT s.name, s.brand, s.postcode, p.fuel_type, p.price_pence, p.recorded_at
+        SELECT s.node_id, s.name, s.brand, s.postcode, p.fuel_type, p.price_pence, p.recorded_at
         FROM prices p
         JOIN stations s ON s.node_id = p.node_id
         WHERE s.region = ? AND p.id IN (
@@ -564,7 +769,7 @@ def get_region_data(conn, region, uk_latest):
 
     # Station fuels
     station_fuel_rows = conn.execute("""
-        SELECT s.name, s.brand, s.postcode, p.fuel_type
+        SELECT s.node_id, s.name, s.brand, s.postcode, p.fuel_type
         FROM stations s
         LEFT JOIN prices p ON p.node_id = s.node_id
         WHERE s.region = ? AND p.id IN (
@@ -580,7 +785,7 @@ def get_region_data(conn, region, uk_latest):
     for row in station_fuel_rows:
         key = row["name"]
         if key not in station_fuels_map:
-            station_fuels_map[key] = {"name": row["name"], "brand": row["brand"], "postcode": row["postcode"], "fuels": []}
+            station_fuels_map[key] = {"node_id": row["node_id"], "name": row["name"], "brand": row["brand"], "postcode": row["postcode"], "fuels": []}
         if row["fuel_type"]:
             station_fuels_map[key]["fuels"].append(row["fuel_type"])
     station_fuels = list(station_fuels_map.values())
@@ -671,6 +876,85 @@ def dashboard():
         comparison_fuels=comparison_fuels,
         uk_latest=uk_latest,
         uk_overlay=uk_overlay,
+        station_suffix="",
+    )
+
+
+@app.route("/station/<node_id>")
+def station_view(node_id, base_path=None):
+    init_db()
+    conn = get_conn()
+
+    station = conn.execute(
+        "SELECT * FROM stations WHERE node_id = ?", (node_id,)
+    ).fetchone()
+    if not station:
+        conn.close()
+        return "Station not found", 404
+
+    # Latest price per fuel type
+    latest_prices = conn.execute("""
+        SELECT fuel_type, price_pence, recorded_at
+        FROM prices WHERE node_id = ? AND id IN (
+            SELECT MAX(id) FROM prices WHERE node_id = ?
+            GROUP BY fuel_type
+        )
+        ORDER BY fuel_type
+    """, (node_id, node_id)).fetchall()
+
+    # Daily prices for chart (one point per day per fuel)
+    chart_rows = conn.execute("""
+        SELECT fuel_type, DATE(recorded_at) as day, AVG(price_pence) as avg_price
+        FROM prices WHERE node_id = ?
+        GROUP BY fuel_type, DATE(recorded_at) ORDER BY day
+    """, (node_id,)).fetchall()
+    chart_data = {}
+    for row in chart_rows:
+        key = row["fuel_type"]
+        if key not in chart_data:
+            chart_data[key] = {"x": [], "y": []}
+        chart_data[key]["x"].append(row["day"])
+        chart_data[key]["y"].append(round(row["avg_price"], 1))
+
+    # Full price history (one row per date per fuel, with day-over-day change)
+    history_rows = conn.execute("""
+        SELECT fuel_type, DATE(recorded_at) as date, AVG(price_pence) as price_pence
+        FROM prices WHERE node_id = ?
+        GROUP BY fuel_type, DATE(recorded_at)
+        ORDER BY DATE(recorded_at) DESC, fuel_type
+    """, (node_id,)).fetchall()
+
+    # Compute day-over-day changes
+    prev_price = {}
+    history_with_change = []
+    # Process in chronological order to compute changes, then reverse for display
+    sorted_rows = list(reversed(history_rows))
+    for row in sorted_rows:
+        key = row["fuel_type"]
+        change = None
+        if key in prev_price:
+            change = round(row["price_pence"] - prev_price[key], 1)
+        prev_price[key] = row["price_pence"]
+        history_with_change.append({
+            "date": row["date"],
+            "fuel_type": row["fuel_type"],
+            "price_pence": row["price_pence"],
+            "change": change,
+        })
+    history_with_change.reverse()
+
+    conn.close()
+
+    if base_path is None:
+        base_path = "/"
+
+    return render_template_string(
+        STATION_HTML,
+        station=station,
+        latest_prices=latest_prices,
+        chart_data=chart_data,
+        price_history=history_with_change,
+        base_path=base_path,
     )
 
 
