@@ -18,6 +18,7 @@ DASHBOARD_HTML = """
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Shetland Fuel Prices</title>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    {% set fuel_labels = {'E10': 'Petrol (E10)', 'E5': 'Premium Petrol (E5)', 'B7_STANDARD': 'Diesel (B7)', 'SDV': 'SDV'} %}
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -130,7 +131,7 @@ DASHBOARD_HTML = """
             </div>
             {% for fuel, stats in summary.items() %}
             <div class="card">
-                <h3>{{ fuel }} — Shetland Avg</h3>
+                <h3>{{ fuel_labels.get(fuel, fuel) }} — Shetland Avg</h3>
                 <div class="value">{{ "%.1f"|format(stats.avg) }}p</div>
                 <div class="sub">
                     {{ "%.1f"|format(stats.min) }}p – {{ "%.1f"|format(stats.max) }}p range
@@ -143,7 +144,7 @@ DASHBOARD_HTML = """
             {% endfor %}
             {% for fuel, chg in conflict_change.items() %}
             <div class="card">
-                <h3>{{ fuel }} — Since Iran Conflict</h3>
+                <h3>{{ fuel_labels.get(fuel, fuel) }} — Since Iran Conflict</h3>
                 <div class="value"><span class="premium">{{ "%+.1f"|format(chg.diff) }}p ({{ "%+.1f"|format(chg.pct) }}%)</span></div>
                 <div class="sub">{{ "%.1f"|format(chg.before) }}p → {{ "%.1f"|format(chg.after) }}p since 28 Feb</div>
             </div>
@@ -175,7 +176,7 @@ DASHBOARD_HTML = """
                         <td>{{ row.name }}</td>
                         <td>{{ row.brand }}</td>
                         <td>{{ row.postcode }}</td>
-                        <td><span class="fuel-tag fuel-{{ row.fuel_type if row.fuel_type in ['E10','B7_STANDARD','E5','SDV'] else 'default' }}">{{ row.fuel_type }}</span></td>
+                        <td><span class="fuel-tag fuel-{{ row.fuel_type if row.fuel_type in ['E10','B7_STANDARD','E5','SDV'] else 'default' }}">{{ fuel_labels.get(row.fuel_type, row.fuel_type) }}</span></td>
                         <td><strong>{{ "%.1f"|format(row.price_pence) }}</strong></td>
                         <td>
                             {% if row.fuel_type in uk_latest %}
@@ -210,7 +211,7 @@ DASHBOARD_HTML = """
                         <td>{{ s.postcode }}</td>
                         <td>
                             {% for ft in s.fuels %}
-                            <span class="fuel-tag fuel-{{ ft if ft in ['E10','B7_STANDARD','E5','SDV'] else 'default' }}">{{ ft }}</span>
+                            <span class="fuel-tag fuel-{{ ft if ft in ['E10','B7_STANDARD','E5','SDV'] else 'default' }}">{{ fuel_labels.get(ft, ft) }}</span>
                             {% endfor %}
                         </td>
                     </tr>
@@ -228,11 +229,12 @@ DASHBOARD_HTML = """
         const shetlandData = {{ shetland_chart_data|tojson }};
         const sTraces = [];
         const sColors = { 'E10': '#6ee7b7', 'B7_STANDARD': '#7dd3fc', 'E5': '#fde68a', 'SDV': '#d8b4fe' };
+        const fuelLabels = { 'E10': 'Petrol (E10)', 'E5': 'Premium Petrol (E5)', 'B7_STANDARD': 'Diesel (B7)', 'SDV': 'SDV' };
         for (const [key, series] of Object.entries(shetlandData)) {
             sTraces.push({
                 x: series.x,
                 y: series.y,
-                name: 'Shetland ' + key,
+                name: 'Shetland ' + (fuelLabels[key] || key),
                 mode: 'lines+markers',
                 line: { width: 2, color: sColors[key] || '#94a3b8' },
                 marker: { size: 5 },
