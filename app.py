@@ -157,7 +157,13 @@ DASHBOARD_HTML = """
         </div>
 
         <div class="chart-container">
-            <h2>Shetland Price Tracking</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="margin-bottom: 0;">Shetland Price Tracking</h2>
+                <div>
+                    <button onclick="downloadCSV()" style="background: #334155; color: #e2e8f0; border: 1px solid #475569; padding: 0.4rem 0.8rem; border-radius: 0.375rem; cursor: pointer; font-size: 0.8rem; margin-right: 0.5rem;">Download CSV</button>
+                    <button onclick="downloadJSON()" style="background: #334155; color: #e2e8f0; border: 1px solid #475569; padding: 0.4rem 0.8rem; border-radius: 0.375rem; cursor: pointer; font-size: 0.8rem;">Download JSON</button>
+                </div>
+            </div>
             <div id="shetland-chart"></div>
         </div>
 
@@ -280,6 +286,39 @@ DASHBOARD_HTML = """
                 font: { color: '#f87171', size: 11 },
             }],
         }, { responsive: true });
+
+        function downloadJSON() {
+            const data = { shetland: shetlandData, uk_weekly: ukOverlay };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'shetland_fuel_prices.json';
+            a.click();
+        }
+
+        function downloadCSV() {
+            const allDates = new Set();
+            const series = {};
+            for (const [key, s] of Object.entries(shetlandData)) {
+                series['Shetland ' + (fuelLabels[key] || key)] = Object.fromEntries(s.x.map((d, i) => [d, s.y[i]]));
+                s.x.forEach(d => allDates.add(d));
+            }
+            for (const [key, s] of Object.entries(ukOverlay)) {
+                series[ukOverlayLabels[key] || key] = Object.fromEntries(s.x.map((d, i) => [d, s.y[i]]));
+                s.x.forEach(d => allDates.add(d));
+            }
+            const dates = [...allDates].sort();
+            const cols = Object.keys(series);
+            let csv = 'Date,' + cols.join(',') + '\n';
+            for (const d of dates) {
+                csv += d + ',' + cols.map(c => series[c][d] ?? '').join(',') + '\n';
+            }
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'shetland_fuel_prices.csv';
+            a.click();
+        }
     </script>
     {% endif %}
 </body>
