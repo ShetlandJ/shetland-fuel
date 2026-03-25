@@ -20,7 +20,8 @@ def init_db():
             address TEXT,
             postcode TEXT,
             latitude REAL,
-            longitude REAL
+            longitude REAL,
+            region TEXT
         );
 
         CREATE TABLE IF NOT EXISTS prices (
@@ -45,6 +46,13 @@ def init_db():
             PRIMARY KEY (date, fuel_type)
         );
     """)
+    # Migration: add region column to existing databases
+    try:
+        conn.execute("ALTER TABLE stations ADD COLUMN region TEXT")
+    except Exception:
+        pass
+    conn.execute("UPDATE stations SET region = 'shetland' WHERE region IS NULL")
+    conn.commit()
     conn.close()
 
 

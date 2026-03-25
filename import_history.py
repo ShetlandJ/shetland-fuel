@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Import historical Shetland prices from the fuelfinder-archive git repo."""
+"""Import historical prices from the fuelfinder-archive git repo."""
 import json
 from datetime import datetime
 
+from config import get_region, normalise_price
 from db import get_conn, init_db
 
 
@@ -23,14 +24,16 @@ def main():
         name = r["name"]
         brand = r["brand"]
         postcode = r["postcode"]
+        region = get_region(postcode) or "unknown"
 
         # Upsert station
         conn.execute(
-            """INSERT INTO stations (node_id, brand, name, address, postcode)
-               VALUES (?, ?, ?, '', ?)
+            """INSERT INTO stations (node_id, brand, name, address, postcode, region)
+               VALUES (?, ?, ?, '', ?, ?)
                ON CONFLICT(node_id) DO UPDATE SET
-                   brand=excluded.brand, name=excluded.name, postcode=excluded.postcode""",
-            (node_id, brand, name, postcode),
+                   brand=excluded.brand, name=excluded.name, postcode=excluded.postcode,
+                   region=excluded.region""",
+            (node_id, brand, name, postcode, region),
         )
 
         # Insert prices for each fuel type
@@ -38,7 +41,7 @@ def main():
             val = r.get(fuel_code, "")
             if not val:
                 continue
-            price = float(val)
+            price = normalise_price(float(val))
             # Skip obviously bad data (early commits had prices in pounds not pence)
             if price < 10:
                 continue

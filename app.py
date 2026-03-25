@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Web dashboard for Shetland fuel price tracking."""
+"""Web dashboard for Shetland & Orkney fuel price tracking."""
 import json
 import os
 from pathlib import Path
 
 from flask import Flask, render_template_string
 
+from config import REGIONS
 from db import get_conn, init_db
 
 app = Flask(__name__)
@@ -16,7 +17,7 @@ DASHBOARD_HTML = """
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Shetland Fuel Prices</title>
+    <title>Northern Isles Fuel Prices</title>
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     {% set fuel_labels = {'E10': 'Petrol (E10)', 'E5': 'Premium Petrol (E5)', 'B7_STANDARD': 'Diesel (B7)', 'SDV': 'SDV'} %}
     <style>
@@ -35,6 +36,27 @@ DASHBOARD_HTML = """
         header h1 { font-size: 1.5rem; font-weight: 600; color: #f8fafc; }
         header p { color: #94a3b8; margin-top: 0.25rem; }
         .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        .tab-btn {
+            background: #1e293b;
+            color: #94a3b8;
+            border: 1px solid #334155;
+            padding: 0.6rem 1.25rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+        .tab-btn:hover { background: #334155; color: #e2e8f0; }
+        .tab-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
         .cards {
             display: grid;
@@ -95,6 +117,13 @@ DASHBOARD_HTML = """
         .fuel-SDV { background: #581c87; color: #d8b4fe; }
         .fuel-default { background: #334155; color: #e2e8f0; }
 
+        .dl-btn {
+            background: #334155; color: #e2e8f0; border: 1px solid #475569;
+            padding: 0.4rem 0.8rem; border-radius: 0.375rem; cursor: pointer;
+            font-size: 0.8rem; margin-left: 0.5rem;
+        }
+        .dl-btn:hover { background: #475569; }
+
         .empty-state {
             text-align: center;
             padding: 4rem 2rem;
@@ -112,26 +141,35 @@ DASHBOARD_HTML = """
 </head>
 <body>
     <header>
-        <h1>Shetland Fuel Prices</h1>
-        <p>Tracking fuel prices across Shetland filling stations — with UK national averages for context</p>
+        <h1>Northern Isles Fuel Prices</h1>
+        <p>Tracking fuel prices across Shetland &amp; Orkney filling stations — with UK national averages for context</p>
     </header>
     <div class="container">
-    {% if not stations %}
+    {% if not has_data %}
         <div class="empty-state">
             <h2>No data yet</h2>
             <p>Run the price fetcher to start collecting data:</p>
             <code>python fetch_prices.py</code>
         </div>
     {% else %}
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('shetland', this)">Shetland</button>
+            <button class="tab-btn" onclick="switchTab('orkney', this)">Orkney</button>
+            <button class="tab-btn" onclick="switchTab('comparison', this)">Comparison</button>
+        </div>
+
+        {# ===== MACRO: region dashboard ===== #}
+        {% macro region_tab(data, region_key, region_label, chart_id) %}
+        {% if data.stations %}
         <div class="cards">
             <div class="card">
                 <h3>Stations Tracked</h3>
-                <div class="value">{{ stations|length }}</div>
-                <div class="sub">Shetland (ZE postcode)</div>
+                <div class="value">{{ data.stations|length }}</div>
+                <div class="sub">{{ region_label }}</div>
             </div>
-            {% for fuel, stats in summary.items() %}
+            {% for fuel, stats in data.summary.items() %}
             <div class="card">
-                <h3>{{ fuel_labels.get(fuel, fuel) }} — Shetland Avg</h3>
+                <h3>{{ fuel_labels.get(fuel, fuel) }} — {{ region_label }} Avg</h3>
                 <div class="value">{{ "%.1f"|format(stats.avg) }}p</div>
                 <div class="sub">
                     {{ "%.1f"|format(stats.min) }}p – {{ "%.1f"|format(stats.max) }}p range
@@ -142,7 +180,7 @@ DASHBOARD_HTML = """
                 </div>
             </div>
             {% endfor %}
-            {% for fuel, chg in conflict_change.items() %}
+            {% for fuel, chg in data.conflict_change.items() %}
             <div class="card">
                 <h3>{{ fuel_labels.get(fuel, fuel) }} — Since Iran Conflict</h3>
                 <div class="value"><span class="premium">{{ "%+.1f"|format(chg.diff) }}p ({{ "%+.1f"|format(chg.pct) }}%)</span></div>
@@ -158,13 +196,13 @@ DASHBOARD_HTML = """
 
         <div class="chart-container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2 style="margin-bottom: 0;">Shetland Price Tracking</h2>
+                <h2 style="margin-bottom: 0;">{{ region_label }} Price Tracking</h2>
                 <div>
-                    <button onclick="downloadCSV()" style="background: #334155; color: #e2e8f0; border: 1px solid #475569; padding: 0.4rem 0.8rem; border-radius: 0.375rem; cursor: pointer; font-size: 0.8rem; margin-right: 0.5rem;">Download CSV</button>
-                    <button onclick="downloadJSON()" style="background: #334155; color: #e2e8f0; border: 1px solid #475569; padding: 0.4rem 0.8rem; border-radius: 0.375rem; cursor: pointer; font-size: 0.8rem;">Download JSON</button>
+                    <button class="dl-btn" onclick="downloadCSV('{{ region_key }}')">Download CSV</button>
+                    <button class="dl-btn" onclick="downloadJSON('{{ region_key }}')">Download JSON</button>
                 </div>
             </div>
-            <div id="shetland-chart"></div>
+            <div id="{{ chart_id }}"></div>
         </div>
 
         <div class="chart-container" style="overflow-x: auto;">
@@ -182,7 +220,7 @@ DASHBOARD_HTML = """
                     </tr>
                 </thead>
                 <tbody>
-                {% for row in latest_prices %}
+                {% for row in data.latest_prices %}
                     <tr>
                         <td>{{ row.name }}</td>
                         <td>{{ row.brand }}</td>
@@ -204,7 +242,7 @@ DASHBOARD_HTML = """
             </table>
         </div>
         <div class="chart-container" style="overflow-x: auto;">
-            <h2>Shetland Filling Stations</h2>
+            <h2>{{ region_label }} Filling Stations</h2>
             <table>
                 <thead>
                     <tr>
@@ -215,7 +253,7 @@ DASHBOARD_HTML = """
                     </tr>
                 </thead>
                 <tbody>
-                {% for s in station_fuels %}
+                {% for s in data.station_fuels %}
                     <tr>
                         <td>{{ s.name }}</td>
                         <td>{{ s.brand }}</td>
@@ -230,41 +268,61 @@ DASHBOARD_HTML = """
                 </tbody>
             </table>
         </div>
+        {% else %}
+        <div class="empty-state">
+            <h2>No {{ region_label }} data yet</h2>
+            <p>{{ region_label }} station data will appear after the next data fetch.</p>
+        </div>
+        {% endif %}
+        {% endmacro %}
 
+        {# ===== TAB CONTENT ===== #}
+        <div id="tab-shetland" class="tab-content active">
+            {{ region_tab(regions.shetland, 'shetland', 'Shetland', 'shetland-chart') }}
+        </div>
+        <div id="tab-orkney" class="tab-content">
+            {{ region_tab(regions.orkney, 'orkney', 'Orkney', 'orkney-chart') }}
+        </div>
+        <div id="tab-comparison" class="tab-content">
+            <div class="cards">
+                {% for fuel in comparison_fuels %}
+                <div class="card">
+                    <h3>{{ fuel_labels.get(fuel, fuel) }} — Comparison</h3>
+                    <div class="value">
+                        {% if fuel in regions.shetland.summary and fuel in regions.orkney.summary %}
+                        {{ "%.1f"|format(regions.shetland.summary[fuel].avg) }}p vs {{ "%.1f"|format(regions.orkney.summary[fuel].avg) }}p
+                        {% elif fuel in regions.shetland.summary %}
+                        {{ "%.1f"|format(regions.shetland.summary[fuel].avg) }}p vs —
+                        {% elif fuel in regions.orkney.summary %}
+                        — vs {{ "%.1f"|format(regions.orkney.summary[fuel].avg) }}p
+                        {% endif %}
+                    </div>
+                    <div class="sub">Shetland vs Orkney</div>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="chart-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2 style="margin-bottom: 0;">Shetland vs Orkney</h2>
+                    <div>
+                        <button class="dl-btn" onclick="downloadCSV('comparison')">Download CSV</button>
+                        <button class="dl-btn" onclick="downloadJSON('comparison')">Download JSON</button>
+                    </div>
+                </div>
+                <div id="comparison-chart"></div>
+            </div>
+        </div>
     {% endif %}
     </div>
 
-    {% if stations %}
+    {% if has_data %}
     <script>
-        // Shetland tracking chart
-        const shetlandData = {{ shetland_chart_data|tojson }};
-        const sTraces = [];
-        const sColors = { 'E10': '#6ee7b7', 'B7_STANDARD': '#7dd3fc', 'E5': '#fde68a', 'SDV': '#d8b4fe' };
         const fuelLabels = { 'E10': 'Petrol (E10)', 'E5': 'Premium Petrol (E5)', 'B7_STANDARD': 'Diesel (B7)', 'SDV': 'SDV' };
-        for (const [key, series] of Object.entries(shetlandData)) {
-            sTraces.push({
-                x: series.x,
-                y: series.y,
-                name: 'Shetland ' + (fuelLabels[key] || key),
-                mode: 'lines+markers',
-                line: { width: 2, color: sColors[key] || '#94a3b8' },
-                marker: { size: 5 },
-            });
-        }
-        // Overlay UK weekly averages for the same period (actual time series, not flat line)
-        const ukOverlay = {{ uk_overlay|tojson }};
+        const fuelColors = { 'E10': '#6ee7b7', 'B7_STANDARD': '#7dd3fc', 'E5': '#fde68a', 'SDV': '#d8b4fe' };
         const ukOverlayColors = { 'ULSP': '#6ee7b780', 'ULSD': '#7dd3fc80' };
         const ukOverlayLabels = { 'ULSP': 'UK Avg Petrol', 'ULSD': 'UK Avg Diesel' };
-        for (const [key, series] of Object.entries(ukOverlay)) {
-            sTraces.push({
-                x: series.x,
-                y: series.y,
-                name: ukOverlayLabels[key] || key,
-                mode: 'lines',
-                line: { width: 1.5, dash: 'dash', color: ukOverlayColors[key] || '#94a3b880' },
-            });
-        }
-        Plotly.newPlot('shetland-chart', sTraces, {
+
+        const chartLayout = {
             paper_bgcolor: 'rgba(0,0,0,0)',
             plot_bgcolor: 'rgba(0,0,0,0)',
             font: { color: '#94a3b8' },
@@ -285,23 +343,119 @@ DASHBOARD_HTML = """
                 showarrow: false,
                 font: { color: '#f87171', size: 11 },
             }],
-        }, { responsive: true });
+        };
 
-        function downloadJSON() {
-            const data = { shetland: shetlandData, uk_weekly: ukOverlay };
+        // Region chart data from server
+        const regionData = {
+            shetland: {{ regions.shetland.chart_data|tojson }},
+            orkney: {{ regions.orkney.chart_data|tojson }},
+        };
+        const ukOverlay = {{ uk_overlay|tojson }};
+
+        function buildRegionTraces(data, label) {
+            const traces = [];
+            for (const [key, series] of Object.entries(data)) {
+                traces.push({
+                    x: series.x, y: series.y,
+                    name: label + ' ' + (fuelLabels[key] || key),
+                    mode: 'lines+markers',
+                    line: { width: 2, color: fuelColors[key] || '#94a3b8' },
+                    marker: { size: 5 },
+                });
+            }
+            return traces;
+        }
+
+        function buildUkTraces() {
+            const traces = [];
+            for (const [key, series] of Object.entries(ukOverlay)) {
+                traces.push({
+                    x: series.x, y: series.y,
+                    name: ukOverlayLabels[key] || key,
+                    mode: 'lines',
+                    line: { width: 1.5, dash: 'dash', color: ukOverlayColors[key] || '#94a3b880' },
+                });
+            }
+            return traces;
+        }
+
+        // Render Shetland chart
+        Plotly.newPlot('shetland-chart',
+            [...buildRegionTraces(regionData.shetland, 'Shetland'), ...buildUkTraces()],
+            chartLayout, { responsive: true }
+        );
+
+        // Render Orkney chart (deferred until tab shown, but create now for data)
+        const orkneyTraces = [...buildRegionTraces(regionData.orkney, 'Orkney'), ...buildUkTraces()];
+        Plotly.newPlot('orkney-chart', orkneyTraces, chartLayout, { responsive: true });
+
+        // Comparison chart: same colour per fuel, solid=Shetland, dashed=Orkney
+        const compTraces = [];
+        const allFuels = new Set([...Object.keys(regionData.shetland), ...Object.keys(regionData.orkney)]);
+        for (const fuel of allFuels) {
+            const color = fuelColors[fuel] || '#94a3b8';
+            const label = fuelLabels[fuel] || fuel;
+            if (regionData.shetland[fuel]) {
+                compTraces.push({
+                    x: regionData.shetland[fuel].x, y: regionData.shetland[fuel].y,
+                    name: 'Shetland ' + label,
+                    legendgroup: fuel,
+                    mode: 'lines+markers',
+                    line: { width: 2.5, color: color },
+                    marker: { size: 5, symbol: 'circle' },
+                });
+            }
+            if (regionData.orkney[fuel]) {
+                compTraces.push({
+                    x: regionData.orkney[fuel].x, y: regionData.orkney[fuel].y,
+                    name: 'Orkney ' + label,
+                    legendgroup: fuel,
+                    mode: 'lines+markers',
+                    line: { width: 2.5, dash: 'dash', color: color },
+                    marker: { size: 5, symbol: 'diamond' },
+                });
+            }
+        }
+        Plotly.newPlot('comparison-chart', compTraces, chartLayout, { responsive: true });
+
+        // Tab switching
+        function switchTab(tab, btn) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            btn.classList.add('active');
+            // Plotly needs resize when shown from hidden
+            Plotly.Plots.resize(tab + '-chart');
+        }
+
+        // Download helpers
+        function getActiveData(region) {
+            if (region === 'comparison') {
+                return { shetland: regionData.shetland, orkney: regionData.orkney, uk_weekly: ukOverlay };
+            }
+            return { [region]: regionData[region], uk_weekly: ukOverlay };
+        }
+
+        function downloadJSON(region) {
+            const data = getActiveData(region);
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'shetland_fuel_prices.json';
+            a.download = region + '_fuel_prices.json';
             a.click();
         }
 
-        function downloadCSV() {
+        function downloadCSV(region) {
             const allDates = new Set();
             const series = {};
-            for (const [key, s] of Object.entries(shetlandData)) {
-                series['Shetland ' + (fuelLabels[key] || key)] = Object.fromEntries(s.x.map((d, i) => [d, s.y[i]]));
-                s.x.forEach(d => allDates.add(d));
+            const sources = region === 'comparison'
+                ? [['Shetland', regionData.shetland], ['Orkney', regionData.orkney]]
+                : [[region.charAt(0).toUpperCase() + region.slice(1), regionData[region]]];
+            for (const [label, data] of sources) {
+                for (const [key, s] of Object.entries(data)) {
+                    series[label + ' ' + (fuelLabels[key] || key)] = Object.fromEntries(s.x.map((d, i) => [d, s.y[i]]));
+                    s.x.forEach(d => allDates.add(d));
+                }
             }
             for (const [key, s] of Object.entries(ukOverlay)) {
                 series[ukOverlayLabels[key] || key] = Object.fromEntries(s.x.map((d, i) => [d, s.y[i]]));
@@ -316,7 +470,7 @@ DASHBOARD_HTML = """
             const blob = new Blob([csv], { type: 'text/csv' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'shetland_fuel_prices.csv';
+            a.download = region + '_fuel_prices.csv';
             a.click();
         }
     </script>
@@ -326,36 +480,24 @@ DASHBOARD_HTML = """
 """
 
 
-@app.route("/")
-def dashboard():
-    init_db()
-    conn = get_conn()
+def get_region_data(conn, region, uk_latest):
+    """Query all dashboard data for a single region."""
+    stations = conn.execute(
+        "SELECT * FROM stations WHERE region = ? ORDER BY name", (region,)
+    ).fetchall()
 
-    stations = conn.execute("SELECT * FROM stations ORDER BY name").fetchall()
-
-    # Latest price per station+fuel
     latest_prices = conn.execute("""
         SELECT s.name, s.brand, s.postcode, p.fuel_type, p.price_pence, p.recorded_at
         FROM prices p
         JOIN stations s ON s.node_id = p.node_id
-        WHERE p.id IN (
-            SELECT MAX(id) FROM prices GROUP BY node_id, fuel_type
+        WHERE s.region = ? AND p.id IN (
+            SELECT MAX(p2.id) FROM prices p2
+            JOIN stations s2 ON s2.node_id = p2.node_id
+            WHERE s2.region = ?
+            GROUP BY p2.node_id, p2.fuel_type
         )
         ORDER BY s.name, p.fuel_type
-    """).fetchall()
-
-    # Latest UK averages (map Shetland fuel types to UK equivalents)
-    uk_latest_row = conn.execute("""
-        SELECT fuel_type, price_pence FROM uk_weekly_prices
-        WHERE date = (SELECT MAX(date) FROM uk_weekly_prices)
-    """).fetchall()
-    uk_latest = {}
-    for row in uk_latest_row:
-        if row["fuel_type"] == "ULSP":
-            uk_latest["E10"] = row["price_pence"]
-            uk_latest["E5"] = row["price_pence"]
-        elif row["fuel_type"] == "ULSD":
-            uk_latest["B7_STANDARD"] = row["price_pence"]
+    """, (region, region)).fetchall()
 
     # Summary stats
     summary = {}
@@ -370,67 +512,70 @@ def dashboard():
     for ft in summary:
         summary[ft]["avg"] = summary[ft]["sum"] / summary[ft]["count"]
 
-    total_records = conn.execute("SELECT COUNT(*) FROM prices").fetchone()[0]
-
-    # Price change since Iran conflict (28 Feb 2026)
+    # Conflict change
     conflict_date = "2026-02-28"
     pre_conflict = conn.execute("""
-        SELECT fuel_type, AVG(price_pence) as avg_price
-        FROM prices
-        WHERE DATE(recorded_at) = (
-            SELECT MAX(DATE(recorded_at)) FROM prices WHERE DATE(recorded_at) <= ?
+        SELECT p.fuel_type, AVG(p.price_pence) as avg_price
+        FROM prices p JOIN stations s ON s.node_id = p.node_id
+        WHERE s.region = ? AND DATE(p.recorded_at) = (
+            SELECT MAX(DATE(p2.recorded_at)) FROM prices p2
+            JOIN stations s2 ON s2.node_id = p2.node_id
+            WHERE s2.region = ? AND DATE(p2.recorded_at) <= ?
         )
-        GROUP BY fuel_type
-    """, (conflict_date,)).fetchall()
+        GROUP BY p.fuel_type
+    """, (region, region, conflict_date)).fetchall()
     post_conflict = conn.execute("""
-        SELECT fuel_type, AVG(price_pence) as avg_price
-        FROM prices
-        WHERE DATE(recorded_at) = (SELECT MAX(DATE(recorded_at)) FROM prices)
-        GROUP BY fuel_type
-    """).fetchall()
+        SELECT p.fuel_type, AVG(p.price_pence) as avg_price
+        FROM prices p JOIN stations s ON s.node_id = p.node_id
+        WHERE s.region = ? AND DATE(p.recorded_at) = (
+            SELECT MAX(DATE(p2.recorded_at)) FROM prices p2
+            JOIN stations s2 ON s2.node_id = p2.node_id
+            WHERE s2.region = ?
+        )
+        GROUP BY p.fuel_type
+    """, (region, region)).fetchall()
+
     pre_map = {r["fuel_type"]: r["avg_price"] for r in pre_conflict}
     post_map = {r["fuel_type"]: r["avg_price"] for r in post_conflict}
-    # UK averages around conflict date
+
     uk_fuel_map = {"E10": "ULSP", "E5": "ULSP", "B7_STANDARD": "ULSD"}
-    uk_pre_conflict = conn.execute("""
+    uk_pre = conn.execute("""
         SELECT fuel_type, price_pence FROM uk_weekly_prices
         WHERE date = (SELECT MAX(date) FROM uk_weekly_prices WHERE date <= ?)
     """, (conflict_date,)).fetchall()
-    uk_post_conflict = conn.execute("""
+    uk_post = conn.execute("""
         SELECT fuel_type, price_pence FROM uk_weekly_prices
         WHERE date = (SELECT MAX(date) FROM uk_weekly_prices)
     """).fetchall()
-    uk_pre_map = {r["fuel_type"]: r["price_pence"] for r in uk_pre_conflict}
-    uk_post_map = {r["fuel_type"]: r["price_pence"] for r in uk_post_conflict}
+    uk_pre_map = {r["fuel_type"]: r["price_pence"] for r in uk_pre}
+    uk_post_map = {r["fuel_type"]: r["price_pence"] for r in uk_post}
 
     conflict_change = {}
     for ft in pre_map:
         if ft in post_map:
-            before = pre_map[ft]
-            after = post_map[ft]
-            entry = {
-                "before": before,
-                "after": after,
-                "diff": after - before,
-                "pct": ((after - before) / before) * 100,
-            }
+            before, after = pre_map[ft], post_map[ft]
+            entry = {"before": before, "after": after, "diff": after - before, "pct": ((after - before) / before) * 100}
             uk_ft = uk_fuel_map.get(ft)
             if uk_ft and uk_ft in uk_pre_map and uk_ft in uk_post_map:
-                uk_before = uk_pre_map[uk_ft]
-                uk_after = uk_post_map[uk_ft]
+                uk_before, uk_after = uk_pre_map[uk_ft], uk_post_map[uk_ft]
                 entry["uk_diff"] = uk_after - uk_before
                 entry["uk_pct"] = ((uk_after - uk_before) / uk_before) * 100
             conflict_change[ft] = entry
 
-    # Station list with available fuels
+    # Station fuels
     station_fuel_rows = conn.execute("""
         SELECT s.name, s.brand, s.postcode, p.fuel_type
         FROM stations s
         LEFT JOIN prices p ON p.node_id = s.node_id
-        WHERE p.id IN (SELECT MAX(id) FROM prices GROUP BY node_id, fuel_type)
+        WHERE s.region = ? AND p.id IN (
+            SELECT MAX(p2.id) FROM prices p2
+            JOIN stations s2 ON s2.node_id = p2.node_id
+            WHERE s2.region = ?
+            GROUP BY p2.node_id, p2.fuel_type
+        )
         GROUP BY s.node_id, p.fuel_type
         ORDER BY s.name, p.fuel_type
-    """).fetchall()
+    """, (region, region)).fetchall()
     station_fuels_map = {}
     for row in station_fuel_rows:
         key = row["name"]
@@ -440,32 +585,63 @@ def dashboard():
             station_fuels_map[key]["fuels"].append(row["fuel_type"])
     station_fuels = list(station_fuels_map.values())
 
-    # Shetland chart data
-    shetland_rows = conn.execute("""
-        SELECT fuel_type, DATE(recorded_at) as day, AVG(price_pence) as avg_price
-        FROM prices GROUP BY fuel_type, DATE(recorded_at) ORDER BY day
-    """).fetchall()
-    shetland_chart_data = {}
-    for row in shetland_rows:
+    # Chart data
+    chart_rows = conn.execute("""
+        SELECT p.fuel_type, DATE(p.recorded_at) as day, AVG(p.price_pence) as avg_price
+        FROM prices p JOIN stations s ON s.node_id = p.node_id
+        WHERE s.region = ?
+        GROUP BY p.fuel_type, DATE(p.recorded_at) ORDER BY day
+    """, (region,)).fetchall()
+    chart_data = {}
+    for row in chart_rows:
         key = row["fuel_type"]
-        if key not in shetland_chart_data:
-            shetland_chart_data[key] = {"x": [], "y": []}
-        shetland_chart_data[key]["x"].append(row["day"])
-        shetland_chart_data[key]["y"].append(round(row["avg_price"], 1))
+        if key not in chart_data:
+            chart_data[key] = {"x": [], "y": []}
+        chart_data[key]["x"].append(row["day"])
+        chart_data[key]["y"].append(round(row["avg_price"], 1))
 
-    # UK national history chart data
-    uk_rows = conn.execute("""
-        SELECT fuel_type, date, price_pence FROM uk_weekly_prices ORDER BY date
+    return {
+        "stations": stations,
+        "latest_prices": latest_prices,
+        "summary": summary,
+        "conflict_change": conflict_change,
+        "station_fuels": station_fuels,
+        "chart_data": chart_data,
+    }
+
+
+@app.route("/")
+def dashboard():
+    init_db()
+    conn = get_conn()
+
+    # UK latest averages (shared across regions)
+    uk_latest_row = conn.execute("""
+        SELECT fuel_type, price_pence FROM uk_weekly_prices
+        WHERE date = (SELECT MAX(date) FROM uk_weekly_prices)
     """).fetchall()
-    uk_chart_data = {}
-    for row in uk_rows:
-        key = row["fuel_type"]
-        if key not in uk_chart_data:
-            uk_chart_data[key] = {"x": [], "y": []}
-        uk_chart_data[key]["x"].append(row["date"])
-        uk_chart_data[key]["y"].append(round(row["price_pence"], 1))
+    uk_latest = {}
+    for row in uk_latest_row:
+        if row["fuel_type"] == "ULSP":
+            uk_latest["E10"] = row["price_pence"]
+            uk_latest["E5"] = row["price_pence"]
+        elif row["fuel_type"] == "ULSD":
+            uk_latest["B7_STANDARD"] = row["price_pence"]
 
-    # UK weekly data overlaid on Shetland chart (same date range)
+    # Per-region data
+    regions_data = {}
+    for region_key in REGIONS:
+        regions_data[region_key] = get_region_data(conn, region_key, uk_latest)
+
+    has_data = any(r["stations"] for r in regions_data.values())
+
+    # Comparison fuel types (union of both regions)
+    comparison_fuels = sorted(set(
+        list(regions_data.get("shetland", {}).get("summary", {}).keys()) +
+        list(regions_data.get("orkney", {}).get("summary", {}).keys())
+    ))
+
+    # UK overlay (shared)
     min_date = conn.execute("SELECT MIN(DATE(recorded_at)) FROM prices").fetchone()[0] or "2026-01-01"
     uk_overlay_rows = conn.execute("""
         SELECT fuel_type, date, price_pence FROM uk_weekly_prices
@@ -481,18 +657,20 @@ def dashboard():
 
     conn.close()
 
+    # Wrap in a namespace-like dict for template access
+    class RegionNS:
+        def __init__(self, data):
+            self.__dict__.update(data)
+
+    regions_ns = type('Regions', (), {k: RegionNS(v) for k, v in regions_data.items()})()
+
     return render_template_string(
         DASHBOARD_HTML,
-        stations=stations,
-        latest_prices=latest_prices,
-        summary=summary,
-        total_records=total_records,
-        conflict_change=conflict_change,
-        shetland_chart_data=shetland_chart_data,
-        uk_chart_data=uk_chart_data,
+        has_data=has_data,
+        regions=regions_ns,
+        comparison_fuels=comparison_fuels,
         uk_latest=uk_latest,
         uk_overlay=uk_overlay,
-        station_fuels=station_fuels,
     )
 
 
@@ -500,7 +678,7 @@ def dashboard():
 def api_prices():
     conn = get_conn()
     rows = conn.execute("""
-        SELECT s.name, s.postcode, p.fuel_type, p.price_pence, p.recorded_at
+        SELECT s.name, s.postcode, s.region, p.fuel_type, p.price_pence, p.recorded_at
         FROM prices p JOIN stations s ON s.node_id = p.node_id
         ORDER BY p.recorded_at DESC LIMIT 500
     """).fetchall()

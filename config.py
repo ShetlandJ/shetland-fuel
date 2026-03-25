@@ -15,5 +15,25 @@ CLIENT_ID = os.environ["FUEL_FINDER_CLIENT_ID"]
 CLIENT_SECRET = os.environ["FUEL_FINDER_CLIENT_SECRET"]
 DB_PATH = os.path.join(os.path.dirname(__file__), "prices.db")
 
-# Shetland postcodes all start with ZE
-SHETLAND_POSTCODE_PREFIX = "ZE"
+# Regions we track
+REGIONS = {
+    "shetland": {"label": "Shetland", "postcode_prefixes": ["ZE"]},
+    "orkney": {"label": "Orkney", "postcode_prefixes": ["KW15", "KW16", "KW17"]},
+}
+
+
+def normalise_price(price):
+    """Fix prices with a missing decimal point (4-digit values like 1599 → 159.9)."""
+    if 1000 <= price <= 9999:
+        return price / 10
+    return price
+
+
+def get_region(postcode):
+    """Return region key for a postcode, or None if not tracked."""
+    postcode = postcode.upper()
+    for region_key, cfg in REGIONS.items():
+        for prefix in cfg["postcode_prefixes"]:
+            if postcode.startswith(prefix):
+                return region_key
+    return None

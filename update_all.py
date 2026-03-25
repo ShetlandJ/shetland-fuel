@@ -10,9 +10,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent
 
+# Build set of all tracked postcode prefixes
+from config import get_region, REGIONS
+_ALL_PREFIXES = []
+for cfg in REGIONS.values():
+    _ALL_PREFIXES.extend(cfg["postcode_prefixes"])
+
 
 def pull_archive():
-    """Clone fuelfinder-archive and extract Shetland records."""
+    """Clone fuelfinder-archive and extract records for tracked regions."""
     print("=== Pulling fuelfinder-archive ===")
     with tempfile.TemporaryDirectory() as tmpdir:
         repo_path = f"{tmpdir}/fuelfinder-archive.git"
@@ -41,7 +47,7 @@ def pull_archive():
             reader = csv.DictReader(io.StringIO(blob.stdout))
             for row in reader:
                 postcode = row.get("forecourts.location.postcode", "")
-                if not postcode.startswith("ZE"):
+                if not any(postcode.startswith(p) for p in _ALL_PREFIXES):
                     continue
                 records.append({
                     "commit_date": commit_date,
@@ -59,7 +65,7 @@ def pull_archive():
         out_path = ROOT / "shetland_history_raw.json"
         with open(out_path, "w") as f:
             json.dump(records, f, indent=2)
-        print(f"  Extracted {len(records)} Shetland records")
+        print(f"  Extracted {len(records)} records across all regions")
 
 
 def import_history():
