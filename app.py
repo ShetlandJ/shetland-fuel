@@ -309,9 +309,9 @@ DASHBOARD_HTML = """
             }
             const dates = [...allDates].sort();
             const cols = Object.keys(series);
-            let csv = 'Date,' + cols.join(',') + '\n';
+            let csv = 'Date,' + cols.join(',') + String.fromCharCode(10);
             for (const d of dates) {
-                csv += d + ',' + cols.map(c => series[c][d] ?? '').join(',') + '\n';
+                csv += d + ',' + cols.map(c => series[c][d] ?? '').join(',') + String.fromCharCode(10);
             }
             const blob = new Blob([csv], { type: 'text/csv' });
             const a = document.createElement('a');
