@@ -1,0 +1,1170 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sutherlands garage — Northern Isles Fuel Prices</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+        }
+        header {
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+            padding: 1.5rem 2rem;
+        }
+        header h1 { font-size: 1.5rem; font-weight: 600; color: #f8fafc; }
+        header p { color: #94a3b8; margin-top: 0.25rem; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+
+        .back-link {
+            color: #60a5fa;
+            text-decoration: none;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+        }
+        .back-link:hover { text-decoration: underline; }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+        }
+        .card h3 { font-size: 0.875rem; color: #94a3b8; font-weight: 500; }
+        .card .value { font-size: 1.75rem; font-weight: 700; color: #f8fafc; margin-top: 0.25rem; }
+        .card .sub { font-size: 0.8rem; color: #64748b; margin-top: 0.25rem; }
+
+        .chart-container {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .chart-container h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+        th, td { padding: 0.75rem 1rem; text-align: left; }
+        th {
+            background: #0f172a;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        td { border-top: 1px solid #1e293b; font-size: 0.9rem; }
+        tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+
+        .fuel-tag {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .fuel-E10 { background: #065f46; color: #6ee7b7; }
+        .fuel-B7_STANDARD { background: #1e3a5f; color: #7dd3fc; }
+        .fuel-E5 { background: #713f12; color: #fde68a; }
+        .fuel-SDV { background: #581c87; color: #d8b4fe; }
+        .fuel-default { background: #334155; color: #e2e8f0; }
+
+        .change-up { color: #f87171; }
+        .change-down { color: #6ee7b7; }
+        .change-none { color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Sutherlands garage</h1>
+        <p>Stenness garage — SUTHERLAND GARAGE, STENNESS, STROMNESS, KW16 3JY, STROMNESS, KW16 3JY</p>
+    </header>
+    <div class="container">
+        <a href="../index.html" class="back-link">&#8592; Back to dashboard</a>
+
+        <div class="cards">
+            
+            <div class="card">
+                <h3>Diesel (B7)</h3>
+                <div class="value">159.9p</div>
+                <div class="sub">Last updated 2026-03-25</div>
+            </div>
+            
+            <div class="card">
+                <h3>Premium Petrol (E5)</h3>
+                <div class="value">145.9p</div>
+                <div class="sub">Last updated 2026-03-25</div>
+            </div>
+            
+        </div>
+
+        <div class="chart-container">
+            <h2>Price History</h2>
+            <div id="station-chart"></div>
+        </div>
+
+        <div class="chart-container" style="overflow-x: auto;">
+            <h2>All Recorded Prices</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Fuel</th>
+                        <th>Price (p/litre)</th>
+                        <th>Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+                
+                    <tr>
+                        <td>2026-03-25</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-25</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-24</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-24</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-23</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-23</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-22</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-22</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-21</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-21</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-20</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-20</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-19</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-19</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-18</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-18</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-17</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-17</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-16</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-16</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-15</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-15</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-14</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-14</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-13</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-13</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-12</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-12</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-11</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-11</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-10</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-10</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-09</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-09</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-08</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-08</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-07</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-07</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-06</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-06</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-05</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-05</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-04</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-04</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-03</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-03</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-02</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-02</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-01</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-01</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-28</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-28</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-27</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-27</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-26</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-26</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-25</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-25</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-24</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-24</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-23</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-23</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-22</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-22</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-21</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-21</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-20</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-20</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-19</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-19</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-18</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-18</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-17</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-17</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-16</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>159.9</strong></td>
+                        <td>
+                            
+                                —
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-02-16</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>145.9</strong></td>
+                        <td>
+                            
+                                —
+                            
+                        </td>
+                    </tr>
+                
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const fuelLabels = { 'E10': 'Petrol (E10)', 'E5': 'Premium Petrol (E5)', 'B7_STANDARD': 'Diesel (B7)', 'SDV': 'SDV' };
+        const fuelColors = { 'E10': '#6ee7b7', 'B7_STANDARD': '#7dd3fc', 'E5': '#fde68a', 'SDV': '#d8b4fe' };
+
+        const chartData = {"B7_STANDARD": {"x": ["2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19", "2026-02-20", "2026-02-21", "2026-02-22", "2026-02-23", "2026-02-24", "2026-02-25", "2026-02-26", "2026-02-27", "2026-02-28", "2026-03-01", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-07", "2026-03-08", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-12", "2026-03-13", "2026-03-14", "2026-03-15", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-03-21", "2026-03-22", "2026-03-23", "2026-03-24", "2026-03-25"], "y": [159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9, 159.9]}, "E5": {"x": ["2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19", "2026-02-20", "2026-02-21", "2026-02-22", "2026-02-23", "2026-02-24", "2026-02-25", "2026-02-26", "2026-02-27", "2026-02-28", "2026-03-01", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-07", "2026-03-08", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-12", "2026-03-13", "2026-03-14", "2026-03-15", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-03-21", "2026-03-22", "2026-03-23", "2026-03-24", "2026-03-25"], "y": [145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9, 145.9]}};
+        const traces = [];
+        for (const [key, series] of Object.entries(chartData)) {
+            traces.push({
+                x: series.x, y: series.y,
+                name: fuelLabels[key] || key,
+                mode: 'lines+markers',
+                line: { width: 2, color: fuelColors[key] || '#94a3b8' },
+                marker: { size: 5 },
+            });
+        }
+
+        Plotly.newPlot('station-chart', traces, {
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#94a3b8' },
+            xaxis: { gridcolor: '#334155' },
+            yaxis: { gridcolor: '#334155', title: 'Pence per litre' },
+            legend: { orientation: 'h', y: -0.15 },
+            margin: { t: 30, r: 20 },
+            hovermode: 'x unified',
+            shapes: [{
+                type: 'line',
+                x0: '2026-02-28', x1: '2026-02-28',
+                y0: 0, y1: 1, yref: 'paper',
+                line: { color: '#f87171', width: 2, dash: 'dot' },
+            }],
+            annotations: [{
+                x: '2026-02-28', y: 1.05, yref: 'paper',
+                text: 'Iran war begins (28 Feb)',
+                showarrow: false,
+                font: { color: '#f87171', size: 11 },
+            }],
+        }, { responsive: true });
+    </script>
+</body>
+</html>
