@@ -243,7 +243,7 @@ DASHBOARD_HTML = """
                                 —
                             {% endif %}
                         </td>
-                        <td>{{ row.recorded_at[:10] }}</td>
+                        <td>{{ row.api_timestamp[:10] if row.api_timestamp else row.recorded_at[:10] }}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -598,7 +598,7 @@ STATION_HTML = """
             <div class="card">
                 <h3>{{ fuel_labels.get(fuel.fuel_type, fuel.fuel_type) }}</h3>
                 <div class="value">{{ "%.1f"|format(fuel.price_pence) }}p</div>
-                <div class="sub">Last updated {{ fuel.recorded_at[:10] }}</div>
+                <div class="sub">Last updated {{ fuel.api_timestamp[:10] if fuel.api_timestamp else fuel.recorded_at[:10] }}</div>
             </div>
             {% endfor %}
         </div>
@@ -692,7 +692,7 @@ def get_region_data(conn, region, uk_latest):
     ).fetchall()
 
     latest_prices = conn.execute("""
-        SELECT s.node_id, s.name, s.brand, s.postcode, p.fuel_type, p.price_pence, p.recorded_at
+        SELECT s.node_id, s.name, s.brand, s.postcode, p.fuel_type, p.price_pence, p.recorded_at, p.api_timestamp
         FROM prices p
         JOIN stations s ON s.node_id = p.node_id
         WHERE s.region = ? AND p.id IN (
@@ -894,7 +894,7 @@ def station_view(node_id, base_path=None):
 
     # Latest price per fuel type
     latest_prices = conn.execute("""
-        SELECT fuel_type, price_pence, recorded_at
+        SELECT fuel_type, price_pence, recorded_at, api_timestamp
         FROM prices WHERE node_id = ? AND id IN (
             SELECT MAX(id) FROM prices WHERE node_id = ?
             GROUP BY fuel_type
