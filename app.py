@@ -61,7 +61,7 @@ DASHBOARD_HTML = """
 
         .cards {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 1rem;
             margin-bottom: 2rem;
         }
@@ -170,11 +170,6 @@ DASHBOARD_HTML = """
         {% macro region_tab(data, region_key, region_label, chart_id) %}
         {% if data.stations %}
         <div class="cards">
-            <div class="card">
-                <h3>Stations Tracked</h3>
-                <div class="value">{{ data.stations|length }}</div>
-                <div class="sub">{{ region_label }}</div>
-            </div>
             {% for fuel, stats in data.summary.items() %}
             <div class="card">
                 <h3>{{ fuel_labels.get(fuel, fuel) }} — {{ region_label }} Avg</h3>
@@ -202,7 +197,7 @@ DASHBOARD_HTML = """
             {% endfor %}
         </div>
 
-        {% if data.summary_excl_outliers or data.summary_recent_14d or data.summary_recent_7d %}
+        {% if data.summary_excl_outliers %}
         <div class="cards">
             {% for fuel, stats in data.summary_excl_outliers.items() %}
             <div class="card">
@@ -213,6 +208,10 @@ DASHBOARD_HTML = """
                 </div>
             </div>
             {% endfor %}
+        </div>
+        {% endif %}
+        {% if data.summary_recent_14d %}
+        <div class="cards">
             {% for fuel, stats in data.summary_recent_14d.items() %}
             <div class="card">
                 <h3>{{ fuel_labels.get(fuel, fuel) }} — Last 14 Days</h3>
@@ -220,6 +219,10 @@ DASHBOARD_HTML = """
                 <div class="sub">{{ stats.count }} stations reported</div>
             </div>
             {% endfor %}
+        </div>
+        {% endif %}
+        {% if data.summary_recent_7d %}
+        <div class="cards">
             {% for fuel, stats in data.summary_recent_7d.items() %}
             <div class="card">
                 <h3>{{ fuel_labels.get(fuel, fuel) }} — Last 7 Days</h3>
