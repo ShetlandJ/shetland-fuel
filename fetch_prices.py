@@ -3,16 +3,7 @@
 
 Run this on a schedule (e.g. every 30 minutes) to build up price history.
 """
-import os
 import sys
-from pathlib import Path
-
-# Load .env
-for line in (Path(__file__).parent / ".env").read_text().splitlines():
-    line = line.strip()
-    if line and not line.startswith("#") and "=" in line:
-        k, v = line.split("=", 1)
-        os.environ.setdefault(k.strip(), v.strip())
 
 from api_client import FuelFinderClient
 from config import get_region, normalise_price

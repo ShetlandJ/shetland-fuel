@@ -5,15 +5,8 @@ Run alongside fetch_prices.py to keep both the database and raw JSON archives.
 The JSON snapshots are useful for auditing and can be replayed into the DB.
 """
 import json
-import os
 from datetime import datetime, timezone
 from pathlib import Path
-
-for line in (Path(__file__).parent / ".env").read_text().splitlines():
-    line = line.strip()
-    if line and not line.startswith("#") and "=" in line:
-        k, v = line.split("=", 1)
-        os.environ.setdefault(k.strip(), v.strip())
 
 from api_client import FuelFinderClient
 from config import SHETLAND_POSTCODE_PREFIX

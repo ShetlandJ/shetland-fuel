@@ -52,6 +52,14 @@ def main():
             seen.add(key)
 
             recorded_at = f"{date}T12:00:00Z"
+            # Skip if we already have a record for this station/fuel/date
+            existing = conn.execute(
+                "SELECT 1 FROM prices WHERE node_id = ? AND fuel_type = ? AND DATE(recorded_at) = ?",
+                (node_id, fuel_type, date),
+            ).fetchone()
+            if existing:
+                continue
+
             conn.execute(
                 "INSERT INTO prices (node_id, fuel_type, price_pence, recorded_at, api_timestamp) VALUES (?, ?, ?, ?, ?)",
                 (node_id, fuel_type, price, recorded_at, r.get("update_ts", "")),
