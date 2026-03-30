@@ -202,6 +202,34 @@ DASHBOARD_HTML = """
             {% endfor %}
         </div>
 
+        {% if data.summary_excl_outliers or data.summary_recent_14d or data.summary_recent_7d %}
+        <div class="cards">
+            {% for fuel, stats in data.summary_excl_outliers.items() %}
+            <div class="card">
+                <h3>{{ fuel_labels.get(fuel, fuel) }} — Excl. Skerries</h3>
+                <div class="value">{{ "%.1f"|format(stats.avg) }}p</div>
+                <div class="sub">{{ stats.count }} stations
+                    {% if fuel in data.summary %} (all: {{ "%.1f"|format(data.summary[fuel].avg) }}p){% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            {% for fuel, stats in data.summary_recent_14d.items() %}
+            <div class="card">
+                <h3>{{ fuel_labels.get(fuel, fuel) }} — Last 14 Days</h3>
+                <div class="value">{{ "%.1f"|format(stats.avg) }}p</div>
+                <div class="sub">{{ stats.count }} stations reported</div>
+            </div>
+            {% endfor %}
+            {% for fuel, stats in data.summary_recent_7d.items() %}
+            <div class="card">
+                <h3>{{ fuel_labels.get(fuel, fuel) }} — Last 7 Days</h3>
+                <div class="value">{{ "%.1f"|format(stats.avg) }}p</div>
+                <div class="sub">{{ stats.count }} stations reported</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <div class="chart-container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h2 style="margin-bottom: 0;">{{ region_label }} Price Tracking</h2>
@@ -717,6 +745,43 @@ def get_region_data(conn, region, uk_latest):
     for ft in summary:
         summary[ft]["avg"] = summary[ft]["sum"] / summary[ft]["count"]
 
+    # Filtered summaries
+    from datetime import datetime, timedelta
+    cutoff_14d = (datetime.utcnow() - timedelta(days=14)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    cutoff_7d = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    outlier_names = {"Skerries Co-operative Society"}
+
+    summary_excl_outliers = {}
+    summary_recent_14d = {}
+    summary_recent_7d = {}
+    for row in latest_prices:
+        ft = row["fuel_type"]
+        ts = row["api_timestamp"] or row["recorded_at"]
+        # Excluding outliers (Skerries)
+        if row["name"] not in outlier_names:
+            if ft not in summary_excl_outliers:
+                summary_excl_outliers[ft] = {"sum": 0, "count": 0}
+            summary_excl_outliers[ft]["sum"] += row["price_pence"]
+            summary_excl_outliers[ft]["count"] += 1
+        # Recently reported (14 days)
+        if ts >= cutoff_14d:
+            if ft not in summary_recent_14d:
+                summary_recent_14d[ft] = {"sum": 0, "count": 0}
+            summary_recent_14d[ft]["sum"] += row["price_pence"]
+            summary_recent_14d[ft]["count"] += 1
+        # Recently reported (7 days)
+        if ts >= cutoff_7d:
+            if ft not in summary_recent_7d:
+                summary_recent_7d[ft] = {"sum": 0, "count": 0}
+            summary_recent_7d[ft]["sum"] += row["price_pence"]
+            summary_recent_7d[ft]["count"] += 1
+    for ft in summary_excl_outliers:
+        summary_excl_outliers[ft]["avg"] = summary_excl_outliers[ft]["sum"] / summary_excl_outliers[ft]["count"]
+    for ft in summary_recent_14d:
+        summary_recent_14d[ft]["avg"] = summary_recent_14d[ft]["sum"] / summary_recent_14d[ft]["count"]
+    for ft in summary_recent_7d:
+        summary_recent_7d[ft]["avg"] = summary_recent_7d[ft]["sum"] / summary_recent_7d[ft]["count"]
+
     # Conflict change
     conflict_date = "2026-02-28"
     pre_conflict = conn.execute("""
@@ -809,6 +874,9 @@ def get_region_data(conn, region, uk_latest):
         "stations": stations,
         "latest_prices": latest_prices,
         "summary": summary,
+        "summary_excl_outliers": summary_excl_outliers,
+        "summary_recent_14d": summary_recent_14d,
+        "summary_recent_7d": summary_recent_7d,
         "conflict_change": conflict_change,
         "station_fuels": station_fuels,
         "chart_data": chart_data,
