@@ -236,7 +236,11 @@ DASHBOARD_HTML = """
         <div class="chart-container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h2 style="margin-bottom: 0;">{{ region_label }} Price Tracking</h2>
-                <div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: #94a3b8; cursor: pointer;">
+                        <input type="checkbox" id="excl-skerries-{{ region_key }}" onchange="toggleSkerries('{{ region_key }}', '{{ chart_id }}', this.checked)">
+                        Exclude Skerries
+                    </label>
                     <button class="dl-btn" onclick="downloadCSV('{{ region_key }}')">Download CSV</button>
                     <button class="dl-btn" onclick="downloadJSON('{{ region_key }}')">Download JSON</button>
                 </div>
@@ -389,6 +393,11 @@ DASHBOARD_HTML = """
             shetland: {{ regions.shetland.chart_data|tojson }},
             orkney: {{ regions.orkney.chart_data|tojson }},
         };
+        const regionDataExcl = {
+            shetland: {{ regions.shetland.chart_data_excl_outliers|tojson }},
+            orkney: {{ regions.orkney.chart_data_excl_outliers|tojson }},
+        };
+        const regionChartIds = { shetland: 'shetland-chart', orkney: 'orkney-chart' };
         const ukOverlay = {{ uk_overlay|tojson }};
 
         function buildRegionTraces(data, label) {
@@ -418,15 +427,26 @@ DASHBOARD_HTML = """
             return traces;
         }
 
-        // Render Shetland chart
-        Plotly.newPlot('shetland-chart',
-            [...buildRegionTraces(regionData.shetland, 'Shetland'), ...buildUkTraces()],
-            chartLayout, { responsive: true }
-        );
+        const regionLabels = { shetland: 'Shetland', orkney: 'Orkney' };
 
-        // Render Orkney chart (deferred until tab shown, but create now for data)
-        const orkneyTraces = [...buildRegionTraces(regionData.orkney, 'Orkney'), ...buildUkTraces()];
-        Plotly.newPlot('orkney-chart', orkneyTraces, chartLayout, { responsive: true });
+        function renderRegionChart(regionKey, chartId, exclSkerries) {
+            const data = exclSkerries ? regionDataExcl[regionKey] : regionData[regionKey];
+            const label = regionLabels[regionKey];
+            Plotly.newPlot(chartId,
+                [...buildRegionTraces(data, label), ...buildUkTraces()],
+                chartLayout, { responsive: true }
+            );
+        }
+
+        function toggleSkerries(regionKey, chartId, excluded) {
+            renderRegionChart(regionKey, chartId, excluded);
+        }
+
+        // Render Shetland chart
+        renderRegionChart('shetland', 'shetland-chart', false);
+
+        // Render Orkney chart
+        renderRegionChart('orkney', 'orkney-chart', false);
 
         // Comparison chart: same colour per fuel, solid=Shetland, dashed=Orkney
         const compTraces = [];
@@ -750,16 +770,36 @@ def get_region_data(conn, region, uk_latest):
 
     # Filtered summaries
     from datetime import datetime, timedelta
-    cutoff_14d = (datetime.utcnow() - timedelta(days=14)).strftime("%Y-%m-%dT%H:%M:%SZ")
-    cutoff_7d = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    from email.utils import parsedate_to_datetime
+    now = datetime.utcnow()
+    cutoff_14d = now - timedelta(days=14)
+    cutoff_7d = now - timedelta(days=7)
     outlier_names = {"Skerries Co-operative Society"}
+
+    def parse_ts(ts):
+        """Parse api_timestamp which may be ISO format or JS Date.toString() format."""
+        if not ts:
+            return None
+        try:
+            # ISO format: 2026-03-23T11:25:30.000Z
+            return datetime.fromisoformat(ts.replace("Z", "+00:00")).replace(tzinfo=None)
+        except (ValueError, AttributeError):
+            pass
+        try:
+            # JS format: Tue Feb 10 2026 09:55:45 GMT+0000 (Coordinated Universal Time)
+            # Strip the parenthetical timezone name
+            clean = ts.split("(")[0].strip()
+            return parsedate_to_datetime(clean).replace(tzinfo=None)
+        except (ValueError, AttributeError):
+            pass
+        return None
 
     summary_excl_outliers = {}
     summary_recent_14d = {}
     summary_recent_7d = {}
     for row in latest_prices:
         ft = row["fuel_type"]
-        ts = row["api_timestamp"] or row["recorded_at"]
+        ts_parsed = parse_ts(row["api_timestamp"]) or parse_ts(row["recorded_at"])
         # Excluding outliers (Skerries)
         if row["name"] not in outlier_names:
             if ft not in summary_excl_outliers:
@@ -767,13 +807,13 @@ def get_region_data(conn, region, uk_latest):
             summary_excl_outliers[ft]["sum"] += row["price_pence"]
             summary_excl_outliers[ft]["count"] += 1
         # Recently reported (14 days)
-        if ts >= cutoff_14d:
+        if ts_parsed and ts_parsed >= cutoff_14d:
             if ft not in summary_recent_14d:
                 summary_recent_14d[ft] = {"sum": 0, "count": 0}
             summary_recent_14d[ft]["sum"] += row["price_pence"]
             summary_recent_14d[ft]["count"] += 1
         # Recently reported (7 days)
-        if ts >= cutoff_7d:
+        if ts_parsed and ts_parsed >= cutoff_7d:
             if ft not in summary_recent_7d:
                 summary_recent_7d[ft] = {"sum": 0, "count": 0}
             summary_recent_7d[ft]["sum"] += row["price_pence"]
@@ -873,6 +913,21 @@ def get_region_data(conn, region, uk_latest):
         chart_data[key]["x"].append(row["day"])
         chart_data[key]["y"].append(round(row["avg_price"], 1))
 
+    # Chart data excluding outliers (Skerries)
+    chart_rows_excl = conn.execute("""
+        SELECT p.fuel_type, DATE(p.recorded_at) as day, AVG(p.price_pence) as avg_price
+        FROM prices p JOIN stations s ON s.node_id = p.node_id
+        WHERE s.region = ? AND s.name NOT IN ({})
+        GROUP BY p.fuel_type, DATE(p.recorded_at) ORDER BY day
+    """.format(",".join("?" for _ in outlier_names)), (region, *outlier_names)).fetchall()
+    chart_data_excl_outliers = {}
+    for row in chart_rows_excl:
+        key = row["fuel_type"]
+        if key not in chart_data_excl_outliers:
+            chart_data_excl_outliers[key] = {"x": [], "y": []}
+        chart_data_excl_outliers[key]["x"].append(row["day"])
+        chart_data_excl_outliers[key]["y"].append(round(row["avg_price"], 1))
+
     return {
         "stations": stations,
         "latest_prices": latest_prices,
@@ -883,6 +938,7 @@ def get_region_data(conn, region, uk_latest):
         "conflict_change": conflict_change,
         "station_fuels": station_fuels,
         "chart_data": chart_data,
+        "chart_data_excl_outliers": chart_data_excl_outliers,
     }
 
 
