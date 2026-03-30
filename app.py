@@ -786,10 +786,9 @@ def get_region_data(conn, region, uk_latest):
         except (ValueError, AttributeError):
             pass
         try:
-            # JS format: Tue Feb 10 2026 09:55:45 GMT+0000 (Coordinated Universal Time)
-            # Strip the parenthetical timezone name
-            clean = ts.split("(")[0].strip()
-            return parsedate_to_datetime(clean).replace(tzinfo=None)
+            # JS Date.toString(): Mon Mar 23 2026 11:25:30 GMT+0000 (Coordinated Universal Time)
+            clean = ts.split("(")[0].strip().replace("GMT", "")
+            return datetime.strptime(clean, "%a %b %d %Y %H:%M:%S %z").replace(tzinfo=None)
         except (ValueError, AttributeError):
             pass
         return None
