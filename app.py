@@ -346,10 +346,31 @@ DASHBOARD_HTML = """
                 </div>
                 {% endfor %}
             </div>
+            <div class="cards">
+                {% for fuel in comparison_fuels %}
+                {% if fuel in regions.shetland.summary_excl_outliers %}
+                <div class="card">
+                    <h3>{{ fuel_labels.get(fuel, fuel) }} — Excl. Skerries</h3>
+                    <div class="value">
+                        {% if fuel in regions.orkney.summary %}
+                        {{ "%.1f"|format(regions.shetland.summary_excl_outliers[fuel].avg) }}p vs {{ "%.1f"|format(regions.orkney.summary[fuel].avg) }}p
+                        {% else %}
+                        {{ "%.1f"|format(regions.shetland.summary_excl_outliers[fuel].avg) }}p vs —
+                        {% endif %}
+                    </div>
+                    <div class="sub">Shetland (excl. Skerries) vs Orkney</div>
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
             <div class="chart-container">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                     <h2 style="margin-bottom: 0;">Shetland vs Orkney</h2>
-                    <div>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: #94a3b8; cursor: pointer;">
+                            <input type="checkbox" id="excl-skerries-comparison" onchange="toggleComparisonSkerries(this.checked)">
+                            Exclude Skerries
+                        </label>
                         <button class="dl-btn" onclick="downloadCSV('comparison')">Download CSV</button>
                         <button class="dl-btn" onclick="downloadJSON('comparison')">Download JSON</button>
                     </div>
@@ -450,34 +471,43 @@ DASHBOARD_HTML = """
         // Render Orkney chart
         renderRegionChart('orkney', 'orkney-chart', false);
 
-        // Comparison chart: same colour per fuel, solid=Shetland, dashed=Orkney
-        const compTraces = [];
-        const allFuels = new Set([...Object.keys(regionData.shetland), ...Object.keys(regionData.orkney)]);
-        for (const fuel of allFuels) {
-            const color = fuelColors[fuel] || '#94a3b8';
-            const label = fuelLabels[fuel] || fuel;
-            if (regionData.shetland[fuel]) {
-                compTraces.push({
-                    x: regionData.shetland[fuel].x, y: regionData.shetland[fuel].y,
-                    name: 'Shetland ' + label,
-                    legendgroup: fuel,
-                    mode: 'lines+markers',
-                    line: { width: 2.5, color: color },
-                    marker: { size: 5, symbol: 'circle' },
-                });
+        function buildCompTraces(exclSkerries) {
+            const shetData = exclSkerries ? regionDataExcl.shetland : regionData.shetland;
+            const orkData = regionData.orkney;
+            const traces = [];
+            const fuels = new Set([...Object.keys(shetData), ...Object.keys(orkData)]);
+            for (const fuel of fuels) {
+                const color = fuelColors[fuel] || '#94a3b8';
+                const label = fuelLabels[fuel] || fuel;
+                if (shetData[fuel]) {
+                    traces.push({
+                        x: shetData[fuel].x, y: shetData[fuel].y,
+                        name: 'Shetland ' + label,
+                        legendgroup: fuel,
+                        mode: 'lines+markers',
+                        line: { width: 2.5, color: color },
+                        marker: { size: 5, symbol: 'circle' },
+                    });
+                }
+                if (orkData[fuel]) {
+                    traces.push({
+                        x: orkData[fuel].x, y: orkData[fuel].y,
+                        name: 'Orkney ' + label,
+                        legendgroup: fuel,
+                        mode: 'lines+markers',
+                        line: { width: 2.5, dash: 'dash', color: color },
+                        marker: { size: 5, symbol: 'diamond' },
+                    });
+                }
             }
-            if (regionData.orkney[fuel]) {
-                compTraces.push({
-                    x: regionData.orkney[fuel].x, y: regionData.orkney[fuel].y,
-                    name: 'Orkney ' + label,
-                    legendgroup: fuel,
-                    mode: 'lines+markers',
-                    line: { width: 2.5, dash: 'dash', color: color },
-                    marker: { size: 5, symbol: 'diamond' },
-                });
-            }
+            return traces;
         }
-        Plotly.newPlot('comparison-chart', compTraces, chartLayout, { responsive: true });
+
+        function toggleComparisonSkerries(excluded) {
+            Plotly.newPlot('comparison-chart', buildCompTraces(excluded), chartLayout, { responsive: true });
+        }
+
+        Plotly.newPlot('comparison-chart', buildCompTraces(false), chartLayout, { responsive: true });
 
         // Tab switching
         function switchTab(tab, btn) {
