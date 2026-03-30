@@ -307,10 +307,12 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h2 style="margin-bottom: 0;">Shetland Price Tracking</h2>
                 <div style="display: flex; align-items: center; gap: 1rem;">
+                    
                     <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: #94a3b8; cursor: pointer;">
                         <input type="checkbox" id="excl-skerries-shetland" onchange="toggleSkerries('shetland', 'shetland-chart', this.checked)">
                         Exclude Skerries
                     </label>
+                    
                     <button class="dl-btn" onclick="downloadCSV('shetland')">Download CSV</button>
                     <button class="dl-btn" onclick="downloadJSON('shetland')">Download JSON</button>
                 </div>
@@ -873,34 +875,6 @@
         </div>
 
         
-        <div class="cards">
-            
-            <div class="card">
-                <h3>Diesel (B7) — Excl. Skerries</h3>
-                <div class="value">175.1p</div>
-                <div class="sub">8 stations
-                     (all: 175.1p)
-                </div>
-            </div>
-            
-            <div class="card">
-                <h3>Petrol (E10) — Excl. Skerries</h3>
-                <div class="value">145.9p</div>
-                <div class="sub">2 stations
-                     (all: 145.9p)
-                </div>
-            </div>
-            
-            <div class="card">
-                <h3>Premium Petrol (E5) — Excl. Skerries</h3>
-                <div class="value">153.5p</div>
-                <div class="sub">7 stations
-                     (all: 153.5p)
-                </div>
-            </div>
-            
-        </div>
-        
         
         <div class="cards">
             
@@ -952,10 +926,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h2 style="margin-bottom: 0;">Orkney Price Tracking</h2>
                 <div style="display: flex; align-items: center; gap: 1rem;">
-                    <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: #94a3b8; cursor: pointer;">
-                        <input type="checkbox" id="excl-skerries-orkney" onchange="toggleSkerries('orkney', 'orkney-chart', this.checked)">
-                        Exclude Skerries
-                    </label>
+                    
                     <button class="dl-btn" onclick="downloadCSV('orkney')">Download CSV</button>
                     <button class="dl-btn" onclick="downloadJSON('orkney')">Download JSON</button>
                 </div>

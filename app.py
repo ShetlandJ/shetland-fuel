@@ -197,7 +197,7 @@ DASHBOARD_HTML = """
             {% endfor %}
         </div>
 
-        {% if data.summary_excl_outliers %}
+        {% if data.summary_excl_outliers and region_key == 'shetland' %}
         <div class="cards">
             {% for fuel, stats in data.summary_excl_outliers.items() %}
             <div class="card">
@@ -237,10 +237,12 @@ DASHBOARD_HTML = """
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <h2 style="margin-bottom: 0;">{{ region_label }} Price Tracking</h2>
                 <div style="display: flex; align-items: center; gap: 1rem;">
+                    {% if region_key == 'shetland' %}
                     <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: #94a3b8; cursor: pointer;">
                         <input type="checkbox" id="excl-skerries-{{ region_key }}" onchange="toggleSkerries('{{ region_key }}', '{{ chart_id }}', this.checked)">
                         Exclude Skerries
                     </label>
+                    {% endif %}
                     <button class="dl-btn" onclick="downloadCSV('{{ region_key }}')">Download CSV</button>
                     <button class="dl-btn" onclick="downloadJSON('{{ region_key }}')">Download JSON</button>
                 </div>
