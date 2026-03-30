@@ -109,13 +109,13 @@
             <div class="card">
                 <h3>Diesel (B7)</h3>
                 <div class="value">189.7p</div>
-                <div class="sub">Last updated 2026-03-27</div>
+                <div class="sub">Last updated Fri Mar 27</div>
             </div>
             
             <div class="card">
                 <h3>Premium Petrol (E5)</h3>
                 <div class="value">159.7p</div>
-                <div class="sub">Last updated 2026-03-27</div>
+                <div class="sub">Last updated Fri Mar 27</div>
             </div>
             
         </div>
@@ -144,13 +144,91 @@
                         <td><strong>189.7</strong></td>
                         <td>
                             
-                                —
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
                             
                         </td>
                     </tr>
                 
                     <tr>
                         <td>2026-03-30</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>159.7</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-29</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>189.7</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-29</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>159.7</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-28</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>189.7</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-28</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>159.7</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-27</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>189.7</strong></td>
+                        <td>
+                            
+                                —
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-03-27</td>
                         <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
                         <td><strong>159.7</strong></td>
                         <td>
@@ -169,7 +247,7 @@
         const fuelLabels = { 'E10': 'Petrol (E10)', 'E5': 'Premium Petrol (E5)', 'B7_STANDARD': 'Diesel (B7)', 'SDV': 'SDV' };
         const fuelColors = { 'E10': '#6ee7b7', 'B7_STANDARD': '#7dd3fc', 'E5': '#fde68a', 'SDV': '#d8b4fe' };
 
-        const chartData = {"B7_STANDARD": {"x": ["2026-03-30"], "y": [189.7]}, "E5": {"x": ["2026-03-30"], "y": [159.7]}};
+        const chartData = {"B7_STANDARD": {"x": ["2026-03-27", "2026-03-28", "2026-03-29", "2026-03-30"], "y": [189.7, 189.7, 189.7, 189.7]}, "E5": {"x": ["2026-03-27", "2026-03-28", "2026-03-29", "2026-03-30"], "y": [159.7, 159.7, 159.7, 159.7]}};
         const traces = [];
         for (const [key, series] of Object.entries(chartData)) {
             traces.push({
