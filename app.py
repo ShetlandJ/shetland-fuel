@@ -35,7 +35,10 @@ DASHBOARD_HTML = """
             padding: 1.5rem 2rem;
         }
         header h1 { font-size: 1.5rem; font-weight: 600; color: #f8fafc; }
-        header p { color: #94a3b8; margin-top: 0.25rem; }
+        header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
+        header .byline { color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; }
+        header .byline a { color: #64748b; text-decoration: none; }
+        header .byline a:hover { color: #94a3b8; text-decoration: underline; }
         .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
 
         .tabs {
@@ -145,12 +148,28 @@ DASHBOARD_HTML = """
             display: inline-block;
             margin-top: 0.5rem;
         }
+
+        @media (max-width: 768px) {
+            header { padding: 1rem; }
+            header h1 { font-size: 1.2rem; }
+            .container { padding: 1rem; }
+            .cards { grid-template-columns: 1fr; }
+            .tabs { flex-wrap: wrap; }
+            .tab-btn { flex: 1; min-width: 0; text-align: center; padding: 0.6rem 0.5rem; font-size: 0.85rem; }
+            .chart-container { padding: 0.75rem; }
+            .chart-container h2 { font-size: 1rem; }
+            table { font-size: 0.8rem; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            th, td { padding: 0.5rem 0.6rem; white-space: nowrap; }
+            .card .value { font-size: 1.4rem; }
+            .dl-btn { padding: 0.3rem 0.6rem; font-size: 0.75rem; }
+        }
     </style>
 </head>
 <body>
     <header>
         <h1>Northern Isles Fuel Prices</h1>
         <p>Tracking fuel prices across Shetland &amp; Orkney filling stations — with UK national averages for context</p>
+        <div class="byline">Built by <a href="mailto:james@jastewart.co.uk">James Stewart</a></div>
     </header>
     <div class="container">
     {% if not has_data %}
@@ -239,9 +258,9 @@ DASHBOARD_HTML = """
         {% endif %}
 
         <div class="chart-container">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
                 <h2 style="margin-bottom: 0;">{{ region_label }} Price Tracking</h2>
-                <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;">
                     {% if region_key == 'shetland' %}
                     <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: #94a3b8; cursor: pointer;">
                         <input type="checkbox" id="excl-skerries-{{ region_key }}" onchange="toggleSkerries('{{ region_key }}', '{{ chart_id }}', this.checked)">
@@ -598,7 +617,10 @@ STATION_HTML = """
             padding: 1.5rem 2rem;
         }
         header h1 { font-size: 1.5rem; font-weight: 600; color: #f8fafc; }
-        header p { color: #94a3b8; margin-top: 0.25rem; }
+        header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
+        header .byline { color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; }
+        header .byline a { color: #64748b; text-decoration: none; }
+        header .byline a:hover { color: #94a3b8; text-decoration: underline; }
         .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
 
         .back-link {
@@ -671,6 +693,17 @@ STATION_HTML = """
         .change-up { color: #f87171; }
         .change-down { color: #6ee7b7; }
         .change-none { color: #94a3b8; }
+
+        @media (max-width: 768px) {
+            header { padding: 1rem; }
+            header h1 { font-size: 1.2rem; }
+            .container { padding: 1rem; }
+            .cards { grid-template-columns: 1fr; }
+            .chart-container { padding: 0.75rem; }
+            table { font-size: 0.8rem; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            th, td { padding: 0.5rem 0.6rem; white-space: nowrap; }
+            .card .value { font-size: 1.4rem; }
+        }
     </style>
 </head>
 <body>
