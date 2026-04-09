@@ -778,14 +778,14 @@ def get_region_data(conn, region, uk_latest):
         SELECT s.node_id, s.name, s.brand, s.postcode, p.fuel_type, p.price_pence, p.recorded_at, p.api_timestamp
         FROM prices p
         JOIN stations s ON s.node_id = p.node_id
-        WHERE s.region = ? AND p.id IN (
-            SELECT MAX(p2.id) FROM prices p2
-            JOIN stations s2 ON s2.node_id = p2.node_id
-            WHERE s2.region = ?
-            GROUP BY p2.node_id, p2.fuel_type
+        WHERE s.region = ? AND p.id = (
+            SELECT p2.id FROM prices p2
+            WHERE p2.node_id = p.node_id AND p2.fuel_type = p.fuel_type
+            ORDER BY p2.recorded_at DESC
+            LIMIT 1
         )
         ORDER BY s.name, p.fuel_type
-    """, (region, region)).fetchall()
+    """, (region,)).fetchall()
 
     # Summary stats
     summary = {}
@@ -911,15 +911,15 @@ def get_region_data(conn, region, uk_latest):
         SELECT s.node_id, s.name, s.brand, s.postcode, p.fuel_type
         FROM stations s
         LEFT JOIN prices p ON p.node_id = s.node_id
-        WHERE s.region = ? AND p.id IN (
-            SELECT MAX(p2.id) FROM prices p2
-            JOIN stations s2 ON s2.node_id = p2.node_id
-            WHERE s2.region = ?
-            GROUP BY p2.node_id, p2.fuel_type
+        WHERE s.region = ? AND p.id = (
+            SELECT p2.id FROM prices p2
+            WHERE p2.node_id = p.node_id AND p2.fuel_type = p.fuel_type
+            ORDER BY p2.recorded_at DESC
+            LIMIT 1
         )
         GROUP BY s.node_id, p.fuel_type
         ORDER BY s.name, p.fuel_type
-    """, (region, region)).fetchall()
+    """, (region,)).fetchall()
     station_fuels_map = {}
     for row in station_fuel_rows:
         key = row["name"]

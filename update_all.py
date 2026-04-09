@@ -73,11 +73,6 @@ def import_history():
     subprocess.run([sys.executable, str(ROOT / "import_history.py")], check=True)
 
 
-def fetch_live_prices():
-    print("=== Fetching live prices ===")
-    subprocess.run([sys.executable, str(ROOT / "fetch_prices.py")], check=True)
-
-
 def import_uk_weekly():
     print("=== Importing UK weekly averages ===")
     subprocess.run([sys.executable, str(ROOT / "import_uk_weekly.py")], check=True)
@@ -91,11 +86,6 @@ def build_static():
 def main():
     pull_archive()
     import_history()
-    try:
-        fetch_live_prices()
-    except Exception as e:
-        print(f"  Warning: live price fetch failed: {e}")
-        print("  Continuing with historical data only...")
     import_uk_weekly()
     build_static()
     print("\n=== All done ===")
