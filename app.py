@@ -36,9 +36,10 @@ DASHBOARD_HTML = """
         }
         header h1 { font-size: 1.5rem; font-weight: 600; color: #f8fafc; }
         header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
-        header .byline { color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; }
-        header .byline a { color: #64748b; text-decoration: none; }
-        header .byline a:hover { color: #94a3b8; text-decoration: underline; }
+        .header-top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+        .header-top .byline { color: #64748b; font-size: 0.8rem; white-space: nowrap; }
+        .header-top .byline a { color: #94a3b8; text-decoration: underline; text-decoration-color: #475569; text-underline-offset: 2px; }
+        .header-top .byline a:hover { color: #e2e8f0; text-decoration-color: #94a3b8; }
         .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
 
         .tabs {
@@ -167,9 +168,11 @@ DASHBOARD_HTML = """
 </head>
 <body>
     <header>
-        <h1>Northern Isles Fuel Prices</h1>
+        <div class="header-top">
+            <h1>Northern Isles Fuel Prices</h1>
+            <span class="byline">Built by <a href="mailto:james@jastewart.co.uk">James Stewart</a></span>
+        </div>
         <p>Tracking fuel prices across Shetland &amp; Orkney filling stations — with UK national averages for context</p>
-        <div class="byline">Built by <a href="mailto:james@jastewart.co.uk">James Stewart</a></div>
     </header>
     <div class="container">
     {% if not has_data %}
@@ -618,9 +621,10 @@ STATION_HTML = """
         }
         header h1 { font-size: 1.5rem; font-weight: 600; color: #f8fafc; }
         header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
-        header .byline { color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; }
-        header .byline a { color: #64748b; text-decoration: none; }
-        header .byline a:hover { color: #94a3b8; text-decoration: underline; }
+        .header-top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+        .header-top .byline { color: #64748b; font-size: 0.8rem; white-space: nowrap; }
+        .header-top .byline a { color: #94a3b8; text-decoration: underline; text-decoration-color: #475569; text-underline-offset: 2px; }
+        .header-top .byline a:hover { color: #e2e8f0; text-decoration-color: #94a3b8; }
         .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
 
         .back-link {
