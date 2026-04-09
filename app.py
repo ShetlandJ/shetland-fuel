@@ -169,20 +169,60 @@ DASHBOARD_HTML = """
         {# ===== MACRO: region dashboard ===== #}
         {% macro region_tab(data, region_key, region_label, chart_id) %}
         {% if data.stations %}
+        {% if data.price_windows.get('today') %}
+        {% set today = data.price_windows['today'] %}
         <div class="cards">
-            {% for fuel, stats in data.summary.items() %}
+            {% for fuel, stats in today.fuels.items() %}
             <div class="card">
-                <h3>{{ fuel_labels.get(fuel, fuel) }} — {{ region_label }} Avg</h3>
+                <h3>{{ fuel_labels.get(fuel, fuel) }} — Today</h3>
                 <div class="value">{{ "%.1f"|format(stats.avg) }}p</div>
                 <div class="sub">
-                    {{ "%.1f"|format(stats.min) }}p – {{ "%.1f"|format(stats.max) }}p range
-                    {% if stats.uk_avg %}
-                    <br>UK avg: {{ "%.1f"|format(stats.uk_avg) }}p
-                    (<span class="premium">+{{ "%.1f"|format(stats.avg - stats.uk_avg) }}p</span>)
+                    {{ stats.n }} stations
+                    {% if data.summary.get(fuel, {}).get('uk_avg') %}
+                    <br>UK avg: {{ "%.1f"|format(data.summary[fuel].uk_avg) }}p
+                    (<span class="premium">+{{ "%.1f"|format(stats.avg - data.summary[fuel].uk_avg) }}p</span>)
                     {% endif %}
                 </div>
             </div>
             {% endfor %}
+        </div>
+        <div class="cards">
+            {% for fuel in today.fuels.keys() %}
+            <div class="card">
+                <h3>{{ fuel_labels.get(fuel, fuel) }} — Change</h3>
+                <div class="sub" style="font-size: 0.95rem; line-height: 1.8;">
+                    {% for wlabel, wkey in [("7d", "7d"), ("14d", "14d"), ("30d", "30d")] %}
+                    {% if data.price_windows.get(wkey, {}).get('fuels', {}).get(fuel) %}
+                    {% set prev = data.price_windows[wkey].fuels[fuel] %}
+                    {% set diff = today.fuels[fuel].avg - prev.avg %}
+                    <span style="display: inline-block; min-width: 3.5em;">{{ wlabel }}:</span>
+                    <span class="{{ 'premium' if diff > 0 else '' }}" style="font-weight: 600;">{{ "%+.1f"|format(diff) }}p</span>
+                    <span style="color: #64748b;">({{ "%.1f"|format(prev.avg) }}p → {{ "%.1f"|format(today.fuels[fuel].avg) }}p)</span><br>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if data.price_windows.get('today') and region_key == 'shetland' %}
+        {% set today_excl = data.price_windows['today'].fuels_excl %}
+        <div class="cards">
+            {% for fuel, stats in today_excl.items() %}
+            <div class="card">
+                <h3>{{ fuel_labels.get(fuel, fuel) }} — Excl. Skerries</h3>
+                <div class="value">{{ "%.1f"|format(stats.avg) }}p</div>
+                <div class="sub">{{ stats.n }} stations
+                    {% if fuel in data.price_windows['today'].fuels %} (all: {{ "%.1f"|format(data.price_windows['today'].fuels[fuel].avg) }}p){% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if data.conflict_change %}
+        <div class="cards">
             {% for fuel, chg in data.conflict_change.items() %}
             <div class="card">
                 <h3>{{ fuel_labels.get(fuel, fuel) }} — Since Iran Conflict</h3>
@@ -193,41 +233,6 @@ DASHBOARD_HTML = """
                     <br>UK avg: {{ "%+.1f"|format(chg.uk_diff) }}p ({{ "%+.1f"|format(chg.uk_pct) }}%)
                     {% endif %}
                 </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        {% if data.summary_excl_outliers and region_key == 'shetland' %}
-        <div class="cards">
-            {% for fuel, stats in data.summary_excl_outliers.items() %}
-            <div class="card">
-                <h3>{{ fuel_labels.get(fuel, fuel) }} — Excl. Skerries</h3>
-                <div class="value">{{ "%.1f"|format(stats.avg) }}p</div>
-                <div class="sub">{{ stats.count }} stations
-                    {% if fuel in data.summary %} (all: {{ "%.1f"|format(data.summary[fuel].avg) }}p){% endif %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% if data.summary_recent_14d %}
-        <div class="cards">
-            {% for fuel, stats in data.summary_recent_14d.items() %}
-            <div class="card">
-                <h3>{{ fuel_labels.get(fuel, fuel) }} — Last 14 Days</h3>
-                <div class="value">{{ "%.1f"|format(stats.avg) }}p</div>
-                <div class="sub">{{ stats.count }} stations reported</div>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-        {% if data.summary_recent_7d %}
-        <div class="cards">
-            {% for fuel, stats in data.summary_recent_7d.items() %}
-            <div class="card">
-                <h3>{{ fuel_labels.get(fuel, fuel) }} — Last 7 Days</h3>
-                <div class="value">{{ "%.1f"|format(stats.avg) }}p</div>
-                <div class="sub">{{ stats.count }} stations reported</div>
             </div>
             {% endfor %}
         </div>
@@ -800,61 +805,46 @@ def get_region_data(conn, region, uk_latest):
     for ft in summary:
         summary[ft]["avg"] = summary[ft]["sum"] / summary[ft]["count"]
 
-    # Filtered summaries
+    # Time-windowed averages (today vs 7d/14d/30d ago)
     from datetime import datetime, timedelta
-    from email.utils import parsedate_to_datetime
-    now = datetime.utcnow()
-    cutoff_14d = now - timedelta(days=14)
-    cutoff_7d = now - timedelta(days=7)
     outlier_names = {"Skerries Co-operative Society"}
 
-    def parse_ts(ts):
-        """Parse api_timestamp which may be ISO format or JS Date.toString() format."""
-        if not ts:
-            return None
-        try:
-            # ISO format: 2026-03-23T11:25:30.000Z
-            return datetime.fromisoformat(ts.replace("Z", "+00:00")).replace(tzinfo=None)
-        except (ValueError, AttributeError):
-            pass
-        try:
-            # JS Date.toString(): Mon Mar 23 2026 11:25:30 GMT+0000 (Coordinated Universal Time)
-            clean = ts.split("(")[0].strip().replace("GMT", "")
-            return datetime.strptime(clean, "%a %b %d %Y %H:%M:%S %z").replace(tzinfo=None)
-        except (ValueError, AttributeError):
-            pass
-        return None
+    max_date_row = conn.execute("""
+        SELECT MAX(DATE(p.recorded_at)) FROM prices p
+        JOIN stations s ON s.node_id = p.node_id WHERE s.region = ?
+    """, (region,)).fetchone()
+    max_date = max_date_row[0] if max_date_row else None
 
-    summary_excl_outliers = {}
-    summary_recent_14d = {}
-    summary_recent_7d = {}
-    for row in latest_prices:
-        ft = row["fuel_type"]
-        ts_parsed = parse_ts(row["api_timestamp"]) or parse_ts(row["recorded_at"])
-        # Excluding outliers (Skerries)
-        if row["name"] not in outlier_names:
-            if ft not in summary_excl_outliers:
-                summary_excl_outliers[ft] = {"sum": 0, "count": 0}
-            summary_excl_outliers[ft]["sum"] += row["price_pence"]
-            summary_excl_outliers[ft]["count"] += 1
-        # Recently reported (14 days)
-        if ts_parsed and ts_parsed >= cutoff_14d:
-            if ft not in summary_recent_14d:
-                summary_recent_14d[ft] = {"sum": 0, "count": 0}
-            summary_recent_14d[ft]["sum"] += row["price_pence"]
-            summary_recent_14d[ft]["count"] += 1
-        # Recently reported (7 days)
-        if ts_parsed and ts_parsed >= cutoff_7d:
-            if ft not in summary_recent_7d:
-                summary_recent_7d[ft] = {"sum": 0, "count": 0}
-            summary_recent_7d[ft]["sum"] += row["price_pence"]
-            summary_recent_7d[ft]["count"] += 1
-    for ft in summary_excl_outliers:
-        summary_excl_outliers[ft]["avg"] = summary_excl_outliers[ft]["sum"] / summary_excl_outliers[ft]["count"]
-    for ft in summary_recent_14d:
-        summary_recent_14d[ft]["avg"] = summary_recent_14d[ft]["sum"] / summary_recent_14d[ft]["count"]
-    for ft in summary_recent_7d:
-        summary_recent_7d[ft]["avg"] = summary_recent_7d[ft]["sum"] / summary_recent_7d[ft]["count"]
+    price_windows = {}
+    if max_date:
+        for label, days_ago in [("today", 0), ("7d", 7), ("14d", 14), ("30d", 30)]:
+            target = (datetime.strptime(max_date, "%Y-%m-%d") - timedelta(days=days_ago)).strftime("%Y-%m-%d")
+            row = conn.execute("""
+                SELECT DATE(p.recorded_at) as day FROM prices p
+                JOIN stations s ON s.node_id = p.node_id
+                WHERE s.region = ? AND DATE(p.recorded_at) <= ?
+                ORDER BY DATE(p.recorded_at) DESC LIMIT 1
+            """, (region, target)).fetchone()
+            if not row:
+                continue
+            actual_date = row["day"]
+            avgs = conn.execute("""
+                SELECT p.fuel_type, AVG(p.price_pence) as avg_price, COUNT(*) as n
+                FROM prices p JOIN stations s ON s.node_id = p.node_id
+                WHERE s.region = ? AND DATE(p.recorded_at) = ?
+                GROUP BY p.fuel_type
+            """, (region, actual_date)).fetchall()
+            avgs_excl = conn.execute("""
+                SELECT p.fuel_type, AVG(p.price_pence) as avg_price, COUNT(*) as n
+                FROM prices p JOIN stations s ON s.node_id = p.node_id
+                WHERE s.region = ? AND DATE(p.recorded_at) = ? AND s.name NOT IN ({})
+                GROUP BY p.fuel_type
+            """.format(",".join("?" for _ in outlier_names)), (region, actual_date, *outlier_names)).fetchall()
+            price_windows[label] = {
+                "date": actual_date,
+                "fuels": {r["fuel_type"]: {"avg": r["avg_price"], "n": r["n"]} for r in avgs},
+                "fuels_excl": {r["fuel_type"]: {"avg": r["avg_price"], "n": r["n"]} for r in avgs_excl},
+            }
 
     # Conflict change
     conflict_date = "2026-02-28"
@@ -963,9 +953,7 @@ def get_region_data(conn, region, uk_latest):
         "stations": stations,
         "latest_prices": latest_prices,
         "summary": summary,
-        "summary_excl_outliers": summary_excl_outliers,
-        "summary_recent_14d": summary_recent_14d,
-        "summary_recent_7d": summary_recent_7d,
+        "price_windows": price_windows,
         "conflict_change": conflict_change,
         "station_fuels": station_fuels,
         "chart_data": chart_data,
