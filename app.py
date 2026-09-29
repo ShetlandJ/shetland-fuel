@@ -164,6 +164,10 @@ DASHBOARD_HTML = """
             .card .value { font-size: 1.4rem; }
             .dl-btn { padding: 0.3rem 0.6rem; font-size: 0.75rem; }
         }
+        .stale-explainer { margin-top: 0.75rem; font-size: 0.85rem; color: #94a3b8; }
+        .stale-explainer summary { cursor: pointer; color: #64748b; }
+        .stale-explainer summary:hover { color: #94a3b8; }
+        .stale-explainer p { margin-top: 0.5rem; line-height: 1.5; max-width: 70ch; }
     </style>
 </head>
 <body>
@@ -187,6 +191,18 @@ DASHBOARD_HTML = """
             <button class="tab-btn" onclick="switchTab('orkney', this)">Orkney</button>
             <button class="tab-btn" onclick="switchTab('comparison', this)">Comparison</button>
         </div>
+
+        {# ===== MACRO: stale prices explainer ===== #}
+        {% macro stale_explainer(stale_now) %}
+        <details class="stale-explainer">
+            <summary>What are stale prices?</summary>
+            <p>Stations report their own prices to the government's Fuel Finder service, and some stop updating. Their listed price can be months out of date. One Shetland station showed its February price until mid-September.</p>
+            <p>By default, these averages leave out any price its station hadn't updated for more than {{ stale_days }} days on that day. Tick <strong>Include stale?</strong> to average every listed price.</p>
+            {% if stale_now %}
+            <p>Stale right now: {{ stale_now|sort|join(', ') }}.</p>
+            {% endif %}
+        </details>
+        {% endmacro %}
 
         {# ===== MACRO: region dashboard ===== #}
         {% macro region_tab(data, region_key, region_label, chart_id) %}
@@ -266,15 +282,20 @@ DASHBOARD_HTML = """
                 <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;">
                     {% if region_key == 'shetland' %}
                     <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: #94a3b8; cursor: pointer;">
-                        <input type="checkbox" id="excl-skerries-{{ region_key }}" onchange="toggleSkerries('{{ region_key }}', '{{ chart_id }}', this.checked)">
+                        <input type="checkbox" id="excl-skerries-{{ region_key }}" onchange="renderRegionChart('{{ region_key }}')">
                         Exclude Skerries
                     </label>
                     {% endif %}
+                    <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: #94a3b8; cursor: pointer;">
+                        <input type="checkbox" id="incl-stale-{{ region_key }}" onchange="renderRegionChart('{{ region_key }}')">
+                        Include stale?
+                    </label>
                     <button class="dl-btn" onclick="downloadCSV('{{ region_key }}')">Download CSV</button>
                     <button class="dl-btn" onclick="downloadJSON('{{ region_key }}')">Download JSON</button>
                 </div>
             </div>
             <div id="{{ chart_id }}"></div>
+            {{ stale_explainer(data.stale_now) }}
         </div>
 
         <div class="chart-container" style="overflow-x: auto;">
@@ -391,18 +412,23 @@ DASHBOARD_HTML = """
                 {% endfor %}
             </div>
             <div class="chart-container">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
                     <h2 style="margin-bottom: 0;">Shetland vs Orkney</h2>
-                    <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 1rem;">
                         <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: #94a3b8; cursor: pointer;">
-                            <input type="checkbox" id="excl-skerries-comparison" onchange="toggleComparisonSkerries(this.checked)">
+                            <input type="checkbox" id="excl-skerries-comparison" onchange="renderComparisonChart()">
                             Exclude Skerries
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: #94a3b8; cursor: pointer;">
+                            <input type="checkbox" id="incl-stale-comparison" onchange="renderComparisonChart()">
+                            Include stale?
                         </label>
                         <button class="dl-btn" onclick="downloadCSV('comparison')">Download CSV</button>
                         <button class="dl-btn" onclick="downloadJSON('comparison')">Download JSON</button>
                     </div>
                 </div>
                 <div id="comparison-chart"></div>
+                {{ stale_explainer(regions.shetland.stale_now + regions.orkney.stale_now) }}
             </div>
         </div>
     {% endif %}
@@ -439,14 +465,20 @@ DASHBOARD_HTML = """
         };
 
         // Region chart data from server
-        const regionData = {
-            shetland: {{ regions.shetland.chart_data|tojson }},
-            orkney: {{ regions.orkney.chart_data|tojson }},
+        // Variants: all, excl_outliers (Skerries), excl_stale, excl_both
+        const regionVariants = {
+            shetland: {{ regions.shetland.chart_variants|tojson }},
+            orkney: {{ regions.orkney.chart_variants|tojson }},
         };
-        const regionDataExcl = {
-            shetland: {{ regions.shetland.chart_data_excl_outliers|tojson }},
-            orkney: {{ regions.orkney.chart_data_excl_outliers|tojson }},
-        };
+        function getRegionData(regionKey, exclSkerries, inclStale) {
+            const v = regionVariants[regionKey];
+            if (exclSkerries) return inclStale ? v.excl_outliers : v.excl_both;
+            return inclStale ? v.all : v.excl_stale;
+        }
+        function isChecked(id) {
+            const el = document.getElementById(id);
+            return el ? el.checked : false;
+        }
         const regionChartIds = { shetland: 'shetland-chart', orkney: 'orkney-chart' };
         const ukOverlay = {{ uk_overlay|tojson }};
 
@@ -479,28 +511,33 @@ DASHBOARD_HTML = """
 
         const regionLabels = { shetland: 'Shetland', orkney: 'Orkney' };
 
-        function renderRegionChart(regionKey, chartId, exclSkerries) {
-            const data = exclSkerries ? regionDataExcl[regionKey] : regionData[regionKey];
+        function currentRegionData(regionKey) {
+            return getRegionData(regionKey,
+                isChecked('excl-skerries-' + regionKey),
+                isChecked('incl-stale-' + regionKey));
+        }
+
+        function renderRegionChart(regionKey) {
             const label = regionLabels[regionKey];
-            Plotly.newPlot(chartId,
-                [...buildRegionTraces(data, label), ...buildUkTraces()],
+            Plotly.newPlot(regionChartIds[regionKey],
+                [...buildRegionTraces(currentRegionData(regionKey), label), ...buildUkTraces()],
                 chartLayout, { responsive: true }
             );
         }
 
-        function toggleSkerries(regionKey, chartId, excluded) {
-            renderRegionChart(regionKey, chartId, excluded);
+        renderRegionChart('shetland');
+        renderRegionChart('orkney');
+
+        function currentCompData() {
+            const inclStale = isChecked('incl-stale-comparison');
+            return {
+                shetland: getRegionData('shetland', isChecked('excl-skerries-comparison'), inclStale),
+                orkney: getRegionData('orkney', false, inclStale),
+            };
         }
 
-        // Render Shetland chart
-        renderRegionChart('shetland', 'shetland-chart', false);
-
-        // Render Orkney chart
-        renderRegionChart('orkney', 'orkney-chart', false);
-
-        function buildCompTraces(exclSkerries) {
-            const shetData = exclSkerries ? regionDataExcl.shetland : regionData.shetland;
-            const orkData = regionData.orkney;
+        function buildCompTraces() {
+            const { shetland: shetData, orkney: orkData } = currentCompData();
             const traces = [];
             const fuels = new Set([...Object.keys(shetData), ...Object.keys(orkData)]);
             for (const fuel of fuels) {
@@ -530,11 +567,11 @@ DASHBOARD_HTML = """
             return traces;
         }
 
-        function toggleComparisonSkerries(excluded) {
-            Plotly.newPlot('comparison-chart', buildCompTraces(excluded), chartLayout, { responsive: true });
+        function renderComparisonChart() {
+            Plotly.newPlot('comparison-chart', buildCompTraces(), chartLayout, { responsive: true });
         }
 
-        Plotly.newPlot('comparison-chart', buildCompTraces(false), chartLayout, { responsive: true });
+        renderComparisonChart();
 
         // Tab switching
         function switchTab(tab, btn) {
@@ -549,9 +586,9 @@ DASHBOARD_HTML = """
         // Download helpers
         function getActiveData(region) {
             if (region === 'comparison') {
-                return { shetland: regionData.shetland, orkney: regionData.orkney, uk_weekly: ukOverlay };
+                return { ...currentCompData(), uk_weekly: ukOverlay };
             }
-            return { [region]: regionData[region], uk_weekly: ukOverlay };
+            return { [region]: currentRegionData(region), uk_weekly: ukOverlay };
         }
 
         function downloadJSON(region) {
@@ -567,8 +604,8 @@ DASHBOARD_HTML = """
             const allDates = new Set();
             const series = {};
             const sources = region === 'comparison'
-                ? [['Shetland', regionData.shetland], ['Orkney', regionData.orkney]]
-                : [[region.charAt(0).toUpperCase() + region.slice(1), regionData[region]]];
+                ? [['Shetland', currentCompData().shetland], ['Orkney', currentCompData().orkney]]
+                : [[region.charAt(0).toUpperCase() + region.slice(1), currentRegionData(region)]];
             for (const [label, data] of sources) {
                 for (const [key, s] of Object.entries(data)) {
                     series[label + ' ' + (fuelLabels[key] || key)] = Object.fromEntries(s.x.map((d, i) => [d, s.y[i]]));
@@ -810,6 +847,29 @@ STATION_HTML = """
 """
 
 
+STALE_DAYS = 30
+
+
+def is_stale(api_timestamp, day):
+    """True if the station last updated its prices more than STALE_DAYS before `day`.
+
+    api_timestamp is either a JS date string from the archive
+    ("Thu Feb 05 2026 13:05:53 GMT+0000 (...)") or ISO from the live API.
+    Unparseable timestamps are treated as not stale.
+    """
+    from datetime import datetime
+    if not api_timestamp:
+        return False
+    try:
+        if api_timestamp[:4].isdigit():
+            updated = datetime.strptime(api_timestamp[:10], "%Y-%m-%d")
+        else:
+            updated = datetime.strptime(api_timestamp[4:15], "%b %d %Y")
+    except ValueError:
+        return False
+    return (datetime.strptime(day, "%Y-%m-%d") - updated).days > STALE_DAYS
+
+
 def get_region_data(conn, region, uk_latest):
     """Query all dashboard data for a single region."""
     stations = conn.execute(
@@ -956,35 +1016,39 @@ def get_region_data(conn, region, uk_latest):
             station_fuels_map[key]["fuels"].append(row["fuel_type"])
     station_fuels = list(station_fuels_map.values())
 
-    # Chart data
+    # Chart data: daily averages, with variants excluding outliers (Skerries)
+    # and/or stale prices
     chart_rows = conn.execute("""
-        SELECT p.fuel_type, DATE(p.recorded_at) as day, AVG(p.price_pence) as avg_price
+        SELECT p.fuel_type, DATE(p.recorded_at) as day, p.price_pence, p.api_timestamp, s.name
         FROM prices p JOIN stations s ON s.node_id = p.node_id
         WHERE s.region = ?
-        GROUP BY p.fuel_type, DATE(p.recorded_at) ORDER BY day
+        ORDER BY day
     """, (region,)).fetchall()
-    chart_data = {}
+    variants = {"all": {}, "excl_outliers": {}, "excl_stale": {}, "excl_both": {}}
     for row in chart_rows:
-        key = row["fuel_type"]
-        if key not in chart_data:
-            chart_data[key] = {"x": [], "y": []}
-        chart_data[key]["x"].append(row["day"])
-        chart_data[key]["y"].append(round(row["avg_price"], 1))
+        outlier = row["name"] in outlier_names
+        stale = is_stale(row["api_timestamp"], row["day"])
+        for vkey, include in [
+            ("all", True),
+            ("excl_outliers", not outlier),
+            ("excl_stale", not stale),
+            ("excl_both", not outlier and not stale),
+        ]:
+            if include:
+                variants[vkey].setdefault(row["fuel_type"], {}).setdefault(row["day"], []).append(row["price_pence"])
+    chart_variants = {
+        vkey: {
+            fuel: {"x": list(days), "y": [round(sum(p) / len(p), 1) for p in days.values()]}
+            for fuel, days in fuels.items()
+        }
+        for vkey, fuels in variants.items()
+    }
 
-    # Chart data excluding outliers (Skerries)
-    chart_rows_excl = conn.execute("""
-        SELECT p.fuel_type, DATE(p.recorded_at) as day, AVG(p.price_pence) as avg_price
-        FROM prices p JOIN stations s ON s.node_id = p.node_id
-        WHERE s.region = ? AND s.name NOT IN ({})
-        GROUP BY p.fuel_type, DATE(p.recorded_at) ORDER BY day
-    """.format(",".join("?" for _ in outlier_names)), (region, *outlier_names)).fetchall()
-    chart_data_excl_outliers = {}
-    for row in chart_rows_excl:
-        key = row["fuel_type"]
-        if key not in chart_data_excl_outliers:
-            chart_data_excl_outliers[key] = {"x": [], "y": []}
-        chart_data_excl_outliers[key]["x"].append(row["day"])
-        chart_data_excl_outliers[key]["y"].append(round(row["avg_price"], 1))
+    # Stations whose current price is stale, for the explainer
+    stale_now = sorted({
+        row["name"] for row in latest_prices
+        if is_stale(row["api_timestamp"], row["recorded_at"][:10])
+    })
 
     return {
         "stations": stations,
@@ -993,8 +1057,8 @@ def get_region_data(conn, region, uk_latest):
         "price_windows": price_windows,
         "conflict_change": conflict_change,
         "station_fuels": station_fuels,
-        "chart_data": chart_data,
-        "chart_data_excl_outliers": chart_data_excl_outliers,
+        "chart_variants": chart_variants,
+        "stale_now": stale_now,
     }
 
 
@@ -1060,6 +1124,7 @@ def dashboard(station_suffix=""):
         uk_latest=uk_latest,
         uk_overlay=uk_overlay,
         station_suffix=station_suffix,
+        stale_days=STALE_DAYS,
     )
 
 
