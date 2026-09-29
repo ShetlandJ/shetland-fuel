@@ -21,7 +21,11 @@
             padding: 1.5rem 2rem;
         }
         header h1 { font-size: 1.5rem; font-weight: 600; color: #f8fafc; }
-        header p { color: #94a3b8; margin-top: 0.25rem; }
+        header p { color: #94a3b8; margin-top: 0.25rem; font-size: 0.9rem; }
+        .header-top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+        .header-top .byline { color: #64748b; font-size: 0.8rem; white-space: nowrap; }
+        .header-top .byline a { color: #94a3b8; text-decoration: underline; text-decoration-color: #475569; text-underline-offset: 2px; }
+        .header-top .byline a:hover { color: #e2e8f0; text-decoration-color: #94a3b8; }
         .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
 
         .back-link {
@@ -94,12 +98,23 @@
         .change-up { color: #f87171; }
         .change-down { color: #6ee7b7; }
         .change-none { color: #94a3b8; }
+
+        @media (max-width: 768px) {
+            header { padding: 1rem; }
+            header h1 { font-size: 1.2rem; }
+            .container { padding: 1rem; }
+            .cards { grid-template-columns: 1fr; }
+            .chart-container { padding: 0.75rem; }
+            table { font-size: 0.8rem; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            th, td { padding: 0.5rem 0.6rem; white-space: nowrap; }
+            .card .value { font-size: 1.4rem; }
+        }
     </style>
 </head>
 <body>
     <header>
         <h1>W I Rendall Shop</h1>
-        <p>W I Rendall Shop — WI Rendall&#39;s Shop,, Westray, KW17 2DH</p>
+        <p>W I Rendall Shop — , KW17 2DH</p>
     </header>
     <div class="container">
         <a href="../index.html" class="back-link">&#8592; Back to dashboard</a>
