@@ -154,6 +154,32 @@
                 <tbody>
                 
                     <tr>
+                        <td>2026-10-09</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>204.7</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
+                        <td>2026-10-09</td>
+                        <td><span class="fuel-tag fuel-E5">Premium Petrol (E5)</span></td>
+                        <td><strong>177.6</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
                         <td>2026-10-08</td>
                         <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
                         <td><strong>204.7</strong></td>
@@ -210,7 +236,7 @@
         const fuelLabels = { 'E10': 'Petrol (E10)', 'E5': 'Premium Petrol (E5)', 'B7_STANDARD': 'Diesel (B7)', 'SDV': 'SDV' };
         const fuelColors = { 'E10': '#6ee7b7', 'B7_STANDARD': '#7dd3fc', 'E5': '#fde68a', 'SDV': '#d8b4fe' };
 
-        const chartData = {"B7_STANDARD": {"x": ["2026-10-07", "2026-10-08"], "y": [204.7, 204.7]}, "E5": {"x": ["2026-10-07", "2026-10-08"], "y": [177.6, 177.6]}};
+        const chartData = {"B7_STANDARD": {"x": ["2026-10-07", "2026-10-08", "2026-10-09"], "y": [204.7, 204.7, 204.7]}, "E5": {"x": ["2026-10-07", "2026-10-08", "2026-10-09"], "y": [177.6, 177.6, 177.6]}};
         const traces = [];
         for (const [key, series] of Object.entries(chartData)) {
             traces.push({
