@@ -148,6 +148,19 @@
                 <tbody>
                 
                     <tr>
+                        <td>2026-10-25</td>
+                        <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
+                        <td><strong>190.0</strong></td>
+                        <td>
+                            
+                                <span class="change-none">
+                                    +0.0p
+                                </span>
+                            
+                        </td>
+                    </tr>
+                
+                    <tr>
                         <td>2026-10-24</td>
                         <td><span class="fuel-tag fuel-B7_STANDARD">Diesel (B7)</span></td>
                         <td><strong>190.0</strong></td>
@@ -193,7 +206,7 @@
         const fuelLabels = { 'E10': 'Petrol (E10)', 'E5': 'Premium Petrol (E5)', 'B7_STANDARD': 'Diesel (B7)', 'SDV': 'SDV' };
         const fuelColors = { 'E10': '#6ee7b7', 'B7_STANDARD': '#7dd3fc', 'E5': '#fde68a', 'SDV': '#d8b4fe' };
 
-        const chartData = {"B7_STANDARD": {"x": ["2026-10-22", "2026-10-23", "2026-10-24"], "y": [190.0, 190.0, 190.0]}};
+        const chartData = {"B7_STANDARD": {"x": ["2026-10-22", "2026-10-23", "2026-10-24", "2026-10-25"], "y": [190.0, 190.0, 190.0, 190.0]}};
         const traces = [];
         for (const [key, series] of Object.entries(chartData)) {
             traces.push({
